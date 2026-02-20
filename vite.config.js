@@ -1,15 +1,12 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  base: './',
   build: {
-    lib: {
-      entry: 'src/gssk-editor.js',
-      name: 'GsskEditor',
-      fileName: (format) => `gssk-editor.${format}.js`
-    },
+    outDir: 'dist',
     rollupOptions: {
-      output: {
-        manualChunks: undefined
+      input: {
+        main: 'index.html',
       }
     }
   }
