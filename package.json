@@ -1,0 +1,19 @@
+{
+  "name": "gssk-editor",
+  "version": "1.0.0",
+  "description": "GSSK Diagram Editor web component",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "ajv": "^8.12.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "@playwright/test": "^1.40.0"
+  }
+}
