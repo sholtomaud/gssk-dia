@@ -26,14 +26,14 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Build
+        run: npm run build
+
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run tests
+      - name: Run tests against Build
         run: npx playwright test
-
-      - name: Build
-        run: npm run build
 
       - name: Upload artifact
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
