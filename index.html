@@ -359,6 +359,8 @@
                 <option value="basic">Basic Source-Storage-Sink</option>
                 <option value="predator-prey">Lotka-Volterra</option>
                 <option value="industrial">Industrial Ecosystem</option>
+                <option value="personal-finance">Personal Finance Model</option>
+                <option value="macro-economy">Macro-Economic Model</option>
             </select>
             <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 8px;"></div>
             <button id="run-sim" class="primary">
@@ -580,6 +582,57 @@
                     { id: 'output', origin: 'factory', target: 'market', logic: 'linear', params: { k: 0.2 }, visual: { points: [] } },
                     { id: 'sale', origin: 'market', target: 'waste', logic: 'linear', params: { k: 0.3 }, visual: { points: [] } },
                     { id: 'loss', origin: 'factory', target: 'waste', logic: 'linear', params: { k: 0.05 }, visual: { points: [] } }
+                ]
+            },
+            'personal-finance': {
+                settings: { dt: 0.1, t_start: 0, t_end: 100, method: 'euler' },
+                boundaries: [
+                    { x: 150, y: 50, w: 620, h: 450, label: 'Household System' }
+                ],
+                nodes: [
+                    { id: 'income', type: 'source', value: 100, visual: { x: 80, y: 270, label: 'Job Income' } },
+                    { id: 'checking', type: 'storage', value: 1000, visual: { x: 250, y: 270, label: 'Checking Account', capacity: 5000 } },
+                    { id: 'housing', type: 'storage', value: 0, visual: { x: 450, y: 120, label: 'Housing Budget', capacity: 2000 } },
+                    { id: 'food', type: 'storage', value: 0, visual: { x: 450, y: 220, label: 'Food Budget', capacity: 1000 } },
+                    { id: 'transport', type: 'storage', value: 0, visual: { x: 450, y: 320, label: 'Transport Budget', capacity: 1000 } },
+                    { id: 'investment', type: 'storage', value: 5000, visual: { x: 450, y: 420, label: 'Investment Portfolio', capacity: 100000 } },
+                    { id: 'tax_sink', type: 'sink', value: 0, visual: { x: 720, y: 120, label: 'Taxes' } },
+                    { id: 'expenses_sink', type: 'sink', value: 0, visual: { x: 720, y: 270, label: 'Expenses' } }
+                ],
+                edges: [
+                    { id: 'e1', origin: 'income', target: 'checking', logic: 'linear', params: { k: 0.7 }, visual: { points: [] } },
+                    { id: 'e2', origin: 'income', target: 'tax_sink', logic: 'linear', params: { k: 0.3 }, visual: { points: [] } },
+                    { id: 'e3', origin: 'checking', target: 'housing', logic: 'linear', params: { k: 0.3 }, visual: { points: [] } },
+                    { id: 'e4', origin: 'checking', target: 'food', logic: 'linear', params: { k: 0.1 }, visual: { points: [] } },
+                    { id: 'e5', origin: 'checking', target: 'transport', logic: 'linear', params: { k: 0.1 }, visual: { points: [] } },
+                    { id: 'e6', origin: 'checking', target: 'investment', logic: 'linear', params: { k: 0.1 }, visual: { points: [] } },
+                    { id: 'e7', origin: 'investment', target: 'checking', logic: 'linear', params: { k: 0.02 }, visual: { points: [] } },
+                    { id: 'e8', origin: 'housing', target: 'expenses_sink', logic: 'linear', params: { k: 0.1 }, visual: { points: [] } },
+                    { id: 'e9', origin: 'food', target: 'expenses_sink', logic: 'linear', params: { k: 0.2 }, visual: { points: [] } },
+                    { id: 'e10', origin: 'transport', target: 'expenses_sink', logic: 'linear', params: { k: 0.1 }, visual: { points: [] } }
+                ]
+            },
+            'macro-economy': {
+                settings: { dt: 0.1, t_start: 0, t_end: 100, method: 'rk4' },
+                boundaries: [
+                    { x: 200, y: 50, w: 550, h: 400, label: 'National Economy' }
+                ],
+                nodes: [
+                    { id: 'resources', type: 'source', value: 10, visual: { x: 100, y: 250, label: 'Natural Resources' } },
+                    { id: 'capital', type: 'storage', value: 100, visual: { x: 350, y: 250, label: 'Capital Assets', capacity: 2000 } },
+                    { id: 'households', type: 'storage', value: 50, visual: { x: 600, y: 150, label: 'Households', capacity: 1000 } },
+                    { id: 'government', type: 'storage', value: 20, visual: { x: 600, y: 350, label: 'Government', capacity: 1000 } },
+                    { id: 'waste', type: 'sink', value: 0, visual: { x: 800, y: 250, label: 'Economic Loss' } }
+                ],
+                edges: [
+                    { id: 'prod', origin: 'resources', target: 'capital', logic: 'interaction', control_node: 'capital', params: { k: 0.01 }, visual: { points: [] } },
+                    { id: 'cons', origin: 'capital', target: 'households', logic: 'linear', params: { k: 0.05 }, visual: { points: [] } },
+                    { id: 'tax', origin: 'capital', target: 'government', logic: 'linear', params: { k: 0.03 }, visual: { points: [] } },
+                    { id: 'inv', origin: 'households', target: 'capital', logic: 'linear', params: { k: 0.02 }, visual: { points: [] } },
+                    { id: 'pub', origin: 'government', target: 'capital', logic: 'linear', params: { k: 0.05 }, visual: { points: [] } },
+                    { id: 'depr', origin: 'capital', target: 'waste', logic: 'linear', params: { k: 0.01 }, visual: { points: [] } },
+                    { id: 'hloss', origin: 'households', target: 'waste', logic: 'linear', params: { k: 0.02 }, visual: { points: [] } },
+                    { id: 'gloss', origin: 'government', target: 'waste', logic: 'linear', params: { k: 0.01 }, visual: { points: [] } }
                 ]
             }
         };

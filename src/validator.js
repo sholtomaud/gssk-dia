@@ -58,6 +58,20 @@ const schema = {
         },
         required: ['id', 'origin', 'target']
       }
+    },
+    boundaries: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          x: { type: 'number' },
+          y: { type: 'number' },
+          w: { type: 'number' },
+          h: { type: 'number' },
+          label: { type: 'string' }
+        },
+        required: ['x', 'y', 'w', 'h']
+      }
     }
   },
   required: ['nodes', 'edges']
