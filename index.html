@@ -546,7 +546,7 @@
 
         const EXAMPLES = {
             basic: {
-                settings: { dt: 0.1, t_start: 0, t_end: 100, method: 'euler' },
+                config: { dt: 0.1, t_start: 0, t_end: 100, method: 'euler' },
                 nodes: [
                     { id: 'sun', type: 'source', value: 0, visual: { x: 100, y: 150, label: 'Sun' } },
                     { id: 'grass', type: 'storage', value: 10.0, visual: { x: 300, y: 150, label: 'Grass Biomass', capacity: 100.0 } },
@@ -558,7 +558,7 @@
                 ]
             },
             'predator-prey': {
-                settings: { dt: 0.1, t_start: 0, t_end: 100, method: 'rk4' },
+                config: { dt: 0.1, t_start: 0, t_end: 100, method: 'rk4' },
                 nodes: [
                     { id: 'prey', type: 'storage', value: 50.0, visual: { x: 200, y: 200, label: 'Prey', capacity: 200 } },
                     { id: 'predator', type: 'storage', value: 10.0, visual: { x: 500, y: 200, label: 'Predator', capacity: 100 } },
@@ -570,7 +570,7 @@
                 ]
             },
             industrial: {
-                settings: { dt: 0.1, t_start: 0, t_end: 100, method: 'euler' },
+                config: { dt: 0.1, t_start: 0, t_end: 100, method: 'euler' },
                 nodes: [
                     { id: 'resource', type: 'source', value: 0, visual: { x: 100, y: 200, label: 'Raw Resource' } },
                     { id: 'factory', type: 'storage', value: 20.0, visual: { x: 300, y: 200, label: 'Production', capacity: 1000 } },
@@ -585,7 +585,7 @@
                 ]
             },
             'personal-finance': {
-                settings: { dt: 0.1, t_start: 0, t_end: 100, method: 'euler' },
+                config: { dt: 0.1, t_start: 0, t_end: 100, method: 'euler' },
                 boundaries: [
                     { x: 150, y: 50, w: 620, h: 450, label: 'Household System' }
                 ],
@@ -613,7 +613,7 @@
                 ]
             },
             'macro-economy': {
-                settings: { dt: 0.1, t_start: 0, t_end: 100, method: 'rk4' },
+                config: { dt: 0.1, t_start: 0, t_end: 100, method: 'rk4' },
                 boundaries: [
                     { x: 200, y: 50, w: 550, h: 400, label: 'National Economy' }
                 ],
@@ -625,7 +625,7 @@
                     { id: 'waste', type: 'sink', value: 0, visual: { x: 800, y: 250, label: 'Economic Loss' } }
                 ],
                 edges: [
-                    { id: 'prod', origin: 'resources', target: 'capital', logic: 'interaction', control_node: 'capital', params: { k: 0.01 }, visual: { points: [] } },
+                    { id: 'prod', origin: 'resources', target: 'capital', logic: 'interaction', params: { k: 0.01, control_node: 'capital' }, visual: { points: [] } },
                     { id: 'cons', origin: 'capital', target: 'households', logic: 'linear', params: { k: 0.05 }, visual: { points: [] } },
                     { id: 'tax', origin: 'capital', target: 'government', logic: 'linear', params: { k: 0.03 }, visual: { points: [] } },
                     { id: 'inv', origin: 'households', target: 'capital', logic: 'linear', params: { k: 0.02 }, visual: { points: [] } },
@@ -642,22 +642,22 @@
             const val = e.target.value;
             if (val && EXAMPLES[val]) {
                 stopSimulation();
-                loadModelWithSettings(EXAMPLES[val]);
+                loadModelWithConfig(EXAMPLES[val]);
                 log(`Loaded example: ${val}`);
             }
         });
 
-        function loadModelWithSettings(model) {
+        function loadModelWithConfig(model) {
             editor.loadModel(model);
-            if (model.settings) {
-                if (model.settings.t_start !== undefined) simStartTimeInput.value = model.settings.t_start;
-                if (model.settings.t_end !== undefined) simEndTimeInput.value = model.settings.t_end;
-                if (model.settings.dt !== undefined) simDtInput.value = model.settings.dt;
+            if (model.config) {
+                if (model.config.t_start !== undefined) simStartTimeInput.value = model.config.t_start;
+                if (model.config.t_end !== undefined) simEndTimeInput.value = model.config.t_end;
+                if (model.config.dt !== undefined) simDtInput.value = model.config.dt;
             }
         }
 
         // Load initial example
-        loadModelWithSettings(EXAMPLES.basic);
+        loadModelWithConfig(EXAMPLES.basic);
 
         let gsskModule;
         let kernelPtr = 0;
@@ -685,6 +685,18 @@
             if (isSimulating) stopSimulation();
         });
 
+        editor.addEventListener('validation', (e) => {
+            const result = e.detail;
+            if (!result.valid) {
+                log('Model Validation Error:', 'error');
+                result.errors.forEach(err => {
+                    log(`- ${err.instancePath} ${err.message}`, 'error');
+                });
+            } else {
+                log('Model configuration is valid.', 'success');
+            }
+        });
+
         runBtn.addEventListener('click', startSimulation);
         stopBtn.addEventListener('click', stopSimulation);
         resetBtn.addEventListener('click', resetSimulation);
@@ -697,11 +709,11 @@
 
             try {
                 const model = editor.getJson();
-                // Apply settings from UI
-                if (!model.settings) model.settings = {};
-                model.settings.t_start = parseFloat(simStartTimeInput.value);
-                model.settings.t_end = parseFloat(simEndTimeInput.value);
-                model.settings.dt = parseFloat(simDtInput.value);
+                // Apply config from UI
+                if (!model.config) model.config = {};
+                model.config.t_start = parseFloat(simStartTimeInput.value);
+                model.config.t_end = parseFloat(simEndTimeInput.value);
+                model.config.dt = parseFloat(simDtInput.value);
 
                 const jsonStr = JSON.stringify(model);
                 const bytes = gsskModule.lengthBytesUTF8(jsonStr) + 1;
@@ -717,18 +729,18 @@
                 }
 
                 chartData = [];
-                simTime = model.settings.t_start;
+                simTime = model.config.t_start;
                 storageNodeIds = new Set(model.nodes.filter(n => n.type === 'storage').map(n => n.id));
 
                 const mode = simModeSelect.value;
                 if (mode === 'batch') {
-                    runBatch(model.settings);
+                    runBatch(model.config);
                 } else {
                     log('Simulation started (streaming).', 'success');
                     isSimulating = true;
                     runBtn.style.display = 'none';
                     stopBtn.style.display = 'flex';
-                    simInterval = setInterval(() => step(model.settings.dt, model.settings.t_end), 50);
+                    simInterval = setInterval(() => step(model.config.dt, model.config.t_end), 50);
                 }
             } catch (e) {
                 log('Simulation error: ' + e.message, 'error');
