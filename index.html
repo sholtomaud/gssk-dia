@@ -156,6 +156,44 @@
             bottom: 0;
         }
 
+        .side-panel {
+            position: absolute;
+            top: var(--top-bar-height);
+            right: -350px;
+            width: 300px;
+            height: calc(100% - var(--top-bar-height));
+            background: var(--panel-bg);
+            border-left: 1px solid var(--border-color);
+            z-index: 150;
+            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: -4px 0 10px rgb(0 0 0 / 0.1);
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .side-panel.open {
+            right: 0;
+        }
+
+        .side-panel .panel-header {
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-color);
+        }
+
+        .side-panel .prop-group {
+            margin-bottom: 20px;
+        }
+
+        .side-panel input, .side-panel select {
+            width: 100%;
+            margin-top: 4px;
+        }
+
         .panel-section {
             padding: 20px;
             border-bottom: 1px solid var(--border-color);
@@ -337,6 +375,10 @@
             <button id="export-json" title="Export to Console">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </button>
+            <button id="open-settings">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Settings
+            </button>
             <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 8px;"></div>
             <div class="theme-switch-wrapper" style="display: flex; align-items: center; gap: 8px;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #94a3b8"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -355,8 +397,36 @@
             <gssk-editor id="editor" symbols="odum"></gssk-editor>
         </div>
 
-        <aside id="rhs-panel">
-            <div id="toggle-rhs">&rsaquo;</div>
+    <div id="settings-panel" class="side-panel">
+        <div class="panel-header">
+            Simulation Settings
+            <button id="close-settings" style="padding: 0; border: none; background: none; font-size: 1.5rem; color: var(--text-color); cursor: pointer;">&times;</button>
+        </div>
+        <div class="panel-content">
+            <div class="prop-group">
+                <label>Simulation Mode</label>
+                <select id="sim-mode">
+                    <option value="streaming">Streaming (Real-time)</option>
+                    <option value="batch">Batch (All at once)</option>
+                </select>
+            </div>
+            <div class="prop-group">
+                <label>Start Time</label>
+                <input type="number" id="sim-start-time" value="0" step="0.1">
+            </div>
+            <div class="prop-group">
+                <label>End Time</label>
+                <input type="number" id="sim-end-time" value="100" step="1">
+            </div>
+            <div class="prop-group">
+                <label>Time Step (dt)</label>
+                <input type="number" id="sim-dt" value="0.1" step="0.01">
+            </div>
+        </div>
+    </div>
+
+    <aside id="rhs-panel">
+        <div id="toggle-rhs">&rsaquo;</div>
             <div class="panel-section" id="log-section" style="height: 250px; min-height: 100px;">
                 <div class="panel-header" id="log-header" style="cursor: ns-resize;">
                     Log Console
@@ -415,6 +485,17 @@
         const toggleRhs = document.getElementById('toggle-rhs');
         const maximizeRhs = document.getElementById('maximize-rhs');
         const invalidMsg = document.getElementById('invalid-msg');
+        const settingsPanel = document.getElementById('settings-panel');
+        const openSettingsBtn = document.getElementById('open-settings');
+        const closeSettingsBtn = document.getElementById('close-settings');
+
+        const simModeSelect = document.getElementById('sim-mode');
+        const simStartTimeInput = document.getElementById('sim-start-time');
+        const simEndTimeInput = document.getElementById('sim-end-time');
+        const simDtInput = document.getElementById('sim-dt');
+
+        openSettingsBtn.addEventListener('click', () => settingsPanel.classList.add('open'));
+        closeSettingsBtn.addEventListener('click', () => settingsPanel.classList.remove('open'));
 
         function log(message, type = 'info') {
             const entry = document.createElement('div');
@@ -508,20 +589,30 @@
             const val = e.target.value;
             if (val && EXAMPLES[val]) {
                 stopSimulation();
-                editor.loadModel(EXAMPLES[val]);
+                loadModelWithSettings(EXAMPLES[val]);
                 log(`Loaded example: ${val}`);
             }
         });
 
+        function loadModelWithSettings(model) {
+            editor.loadModel(model);
+            if (model.settings) {
+                if (model.settings.t_start !== undefined) simStartTimeInput.value = model.settings.t_start;
+                if (model.settings.t_end !== undefined) simEndTimeInput.value = model.settings.t_end;
+                if (model.settings.dt !== undefined) simDtInput.value = model.settings.dt;
+            }
+        }
+
         // Load initial example
-        editor.loadModel(EXAMPLES.basic);
+        loadModelWithSettings(EXAMPLES.basic);
 
         let gsskModule;
         let kernelPtr = 0;
         let isSimulating = false;
         let simInterval = null;
         let chartData = [];
-        let startTime = 0;
+        let simTime = 0;
+        let storageNodeIds = new Set();
 
         async function initGssk() {
             try {
@@ -553,6 +644,12 @@
 
             try {
                 const model = editor.getJson();
+                // Apply settings from UI
+                if (!model.settings) model.settings = {};
+                model.settings.t_start = parseFloat(simStartTimeInput.value);
+                model.settings.t_end = parseFloat(simEndTimeInput.value);
+                model.settings.dt = parseFloat(simDtInput.value);
+
                 const jsonStr = JSON.stringify(model);
                 const bytes = gsskModule.lengthBytesUTF8(jsonStr) + 1;
                 const ptr = gsskModule._malloc(bytes);
@@ -566,26 +663,74 @@
                     throw new Error('Kernel initialization failed.');
                 }
 
-                log('Simulation started.', 'success');
-                isSimulating = true;
-                runBtn.style.display = 'none';
-                stopBtn.style.display = 'flex';
-
                 chartData = [];
-                startTime = Date.now();
+                simTime = model.settings.t_start;
+                storageNodeIds = new Set(model.nodes.filter(n => n.type === 'storage').map(n => n.id));
 
-                const dt = gsskModule._GSSK_GetDt(kernelPtr) || 0.1;
-                simInterval = setInterval(() => step(dt), 50);
+                const mode = simModeSelect.value;
+                if (mode === 'batch') {
+                    runBatch(model.settings);
+                } else {
+                    log('Simulation started (streaming).', 'success');
+                    isSimulating = true;
+                    runBtn.style.display = 'none';
+                    stopBtn.style.display = 'flex';
+                    simInterval = setInterval(() => step(model.settings.dt, model.settings.t_end), 50);
+                }
             } catch (e) {
                 log('Simulation error: ' + e.message, 'error');
             }
         }
 
-        function step(dt) {
+        function runBatch(settings) {
+            log('Running batch simulation...', 'info');
+            const dt = settings.dt;
+            const t_end = settings.t_end;
+
+            while (simTime < t_end) {
+                gsskModule._GSSK_Step(kernelPtr, dt);
+                simTime += dt;
+                recordState(simTime);
+            }
+
+            updateVisualsFromState();
+            updateChart();
+            log('Batch simulation complete.', 'success');
+        }
+
+        function step(dt, t_end) {
             if (!isSimulating || !kernelPtr) return;
 
             gsskModule._GSSK_Step(kernelPtr, dt);
+            simTime += dt;
 
+            updateVisualsFromState();
+            recordState(simTime);
+            updateChart();
+
+            if (simTime >= t_end) {
+                stopSimulation();
+                log('Simulation reached end time.', 'success');
+            }
+        }
+
+        function recordState(time) {
+            const statePtr = gsskModule._GSSK_GetState(kernelPtr);
+            const size = gsskModule._GSSK_GetStateSize(kernelPtr);
+            const state = gsskModule.HEAPF64.subarray(statePtr / 8, statePtr / 8 + size);
+
+            const entry = { time };
+            for (let i = 0; i < size; i++) {
+                const idPtr = gsskModule._GSSK_GetNodeID(kernelPtr, i);
+                const id = gsskModule.UTF8ToString(idPtr);
+                if (storageNodeIds.has(id)) {
+                    entry[id] = state[i];
+                }
+            }
+            chartData.push(entry);
+        }
+
+        function updateVisualsFromState() {
             const statePtr = gsskModule._GSSK_GetState(kernelPtr);
             const size = gsskModule._GSSK_GetStateSize(kernelPtr);
             const state = gsskModule.HEAPF64.subarray(statePtr / 8, statePtr / 8 + size);
@@ -596,22 +741,7 @@
                 const id = gsskModule.UTF8ToString(idPtr);
                 stateMap[id] = state[i];
             }
-
             editor.updateState(stateMap);
-
-            // Record data for chart
-            const model = editor.getJson();
-            const time = (Date.now() - startTime) / 1000;
-            const entry = { time };
-            model.nodes.forEach((node, i) => {
-                if (node.type === 'storage') {
-                    entry[node.id] = state[i];
-                }
-            });
-            chartData.push(entry);
-            if (chartData.length > 200) chartData.shift();
-
-            updateChart();
         }
 
         function stopSimulation() {
@@ -651,8 +781,8 @@
             const storageNodes = model.nodes.filter(n => n.type === 'storage');
             if (storageNodes.length === 0) return;
 
-            let minX = chartData[0].time;
-            let maxX = chartData[chartData.length - 1].time;
+            let minX = 0;
+            let maxX = Math.max(1, chartData[chartData.length - 1].time);
             let minY = 0;
             let maxY = 0;
 
