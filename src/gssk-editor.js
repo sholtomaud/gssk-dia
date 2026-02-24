@@ -15,15 +15,21 @@ export class GsskEditor extends HTMLElement {
     this._draggedElement = null;
     this._animationRequested = false;
 
+    // Pan & Zoom state
+    this._viewBox = { x: 0, y: 0, w: 1000, h: 1000 };
+    this._zoom = 1;
+    this._isPanning = false;
+
     this._onMouseDown = this.onMouseDown.bind(this);
     this._onMouseMove = this.onMouseMove.bind(this);
     this._onMouseUp = this.onMouseUp.bind(this);
+    this._onWheel = this.onWheel.bind(this);
     this._onDrop = this.onDrop.bind(this);
     this._onDoubleClick = this.onDoubleClick.bind(this);
   }
 
   static get observedAttributes() {
-    return ['symbols', 'readonly', 'grid'];
+    return ['symbols', 'readonly', 'grid', 'invalid'];
   }
 
   connectedCallback() {
@@ -67,23 +73,32 @@ export class GsskEditor extends HTMLElement {
   set value(val) { this.loadModel(val); }
 
   loadModel(json) {
-    if (validateModel(json)) {
-        this._value = JSON.parse(JSON.stringify(json));
-        this.update();
+    this._value = JSON.parse(JSON.stringify(json));
+    this.validate();
+    this.update();
+  }
+
+  validate() {
+    const isValid = validateModel(this._value);
+    if (isValid) {
+      this.removeAttribute('invalid');
     } else {
-        console.warn('Invalid GSSK model provided. Not loading.');
+      this.setAttribute('invalid', '');
     }
+    return isValid;
   }
 
   getJson() {
+    // Ensure the JSON matches GSSK expectations
+    // GSSK expects nodes and edges.
     return JSON.parse(JSON.stringify(this._value));
   }
 
-  updateState(stateArray) {
+  updateState(stateMap) {
     if (!this._value || !this._value.nodes) return;
-    this._value.nodes.forEach((node, index) => {
-      if (index < stateArray.length) {
-        node.value = stateArray[index];
+    this._value.nodes.forEach((node) => {
+      if (stateMap[node.id] !== undefined) {
+        node.value = stateMap[node.id];
       }
     });
     if (!this._animationRequested) {
@@ -105,11 +120,7 @@ export class GsskEditor extends HTMLElement {
             fillElement.setAttribute('y', (80 - fillHeight).toString());
         }
     });
-    const edges = this.shadowRoot.querySelectorAll('#edges-layer path');
-    edges.forEach(edge => {
-        edge.style.transition = 'stroke-width 0.2s';
-        edge.setAttribute('stroke-width', (2 + Math.sin(Date.now() / 200) * 0.5).toString());
-    });
+    // Optional: add flow animation here if state includes flows
   }
 
   render() {
@@ -118,17 +129,17 @@ export class GsskEditor extends HTMLElement {
       <div class="editor-container">
         <div id="palette" class="panel palette">
           <div class="panel-header">
-            Palette
-            <button class="toggle" id="close-palette">&times;</button>
+            Nodes
           </div>
-          <div class="palette-item" draggable="true" data-type="source" title="Source">S</div>
-          <div class="palette-item" draggable="true" data-type="storage" title="Storage">St</div>
-          <div class="palette-item" draggable="true" data-type="sink" title="Sink">Sk</div>
-          <div class="palette-item" draggable="true" data-type="constant" title="Constant">C</div>
+          <div class="palette-item" draggable="true" data-type="source" title="Source">Src</div>
+          <div class="palette-item" draggable="true" data-type="storage" title="Storage">Sto</div>
+          <div class="palette-item" draggable="true" data-type="sink" title="Sink">Snk</div>
+          <div class="palette-item" draggable="true" data-type="constant" title="Constant">Con</div>
         </div>
-        <div id="canvas-container" style="background-size: ${this._gridSize}px ${this._gridSize}px">
-          <svg id="svg-canvas" viewBox="0 0 1000 1000">
+        <div id="canvas-container">
+          <svg id="svg-canvas" viewBox="${this._viewBox.x} ${this._viewBox.y} ${this._viewBox.w} ${this._viewBox.h}">
             <defs id="symbol-defs"></defs>
+            <g id="grid-layer"></g>
             <g id="edges-layer"></g>
             <g id="nodes-layer"></g>
           </svg>
@@ -147,9 +158,9 @@ export class GsskEditor extends HTMLElement {
   }
 
   update() {
-    const canvas = this.shadowRoot.getElementById('canvas-container');
-    if (canvas) {
-      canvas.style.backgroundSize = `${this._gridSize}px ${this._gridSize}px`;
+    const svg = this.shadowRoot.getElementById('svg-canvas');
+    if (svg) {
+        svg.setAttribute('viewBox', `${this._viewBox.x} ${this._viewBox.y} ${this._viewBox.w} ${this._viewBox.h}`);
     }
     const defs = this.shadowRoot.getElementById('symbol-defs');
     if (defs) {
@@ -167,10 +178,9 @@ export class GsskEditor extends HTMLElement {
       const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       g.setAttribute('transform', `translate(${node.visual.x - 40}, ${node.visual.y - 40})`);
       g.setAttribute('data-id', node.id);
-      g.setAttribute('class', 'node-group');
+      g.setAttribute('class', `node-group ${this._selectedId === node.id ? 'selected' : ''}`);
       g.style.cursor = this._readOnly ? 'default' : 'grab';
 
-      // Background rect for better hit testing
       const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       bg.setAttribute('width', '80');
       bg.setAttribute('height', '80');
@@ -186,18 +196,19 @@ export class GsskEditor extends HTMLElement {
 
       if (node.type === 'storage') {
         const fillClipPathId = `clip-${node.id}`;
-        const clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
-        clipPath.setAttribute('id', fillClipPathId);
-        const clipRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        clipRect.setAttribute('id', `fill-${node.id}`);
-        clipRect.setAttribute('x', '20');
-        clipRect.setAttribute('y', '80');
-        clipRect.setAttribute('width', '60');
-        clipRect.setAttribute('height', '0');
-        clipPath.appendChild(clipRect);
-
-        const defs = this.shadowRoot.getElementById('symbol-defs');
-        defs.appendChild(clipPath);
+        let clipPath = this.shadowRoot.getElementById(fillClipPathId);
+        if (!clipPath) {
+            clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+            clipPath.setAttribute('id', fillClipPathId);
+            const clipRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            clipRect.setAttribute('id', `fill-${node.id}`);
+            clipRect.setAttribute('x', '20');
+            clipRect.setAttribute('y', '80');
+            clipRect.setAttribute('width', '60');
+            clipRect.setAttribute('height', '0');
+            clipPath.appendChild(clipRect);
+            this.shadowRoot.getElementById('symbol-defs').appendChild(clipPath);
+        }
 
         const fillUse = document.createElementNS('http://www.w3.org/2000/svg', 'use');
         fillUse.setAttribute('href', `#${symbolId}`);
@@ -226,8 +237,7 @@ export class GsskEditor extends HTMLElement {
           const port = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
           port.setAttribute('cx', p.x);
           port.setAttribute('cy', p.y);
-          port.setAttribute('r', '6');
-          port.setAttribute('fill', 'rgba(0,0,0,0.1)');
+          port.setAttribute('r', '5');
           port.setAttribute('class', 'node-port');
           port.setAttribute('data-pos', p.pos);
           g.appendChild(port);
@@ -242,26 +252,13 @@ export class GsskEditor extends HTMLElement {
     const layer = this.shadowRoot.getElementById('edges-layer');
     if (!layer) return;
     layer.innerHTML = '';
-    this._value.edges.forEach(edge => {
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.setAttribute('data-id', edge.id);
 
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      const d = this.calculatePathData(edge);
-      path.setAttribute('d', d);
-      path.setAttribute('fill', 'none');
-      path.setAttribute('stroke', 'black');
-      path.setAttribute('stroke-width', '2');
-      if (edge.logic === 'interaction') {
-        path.setAttribute('stroke-dasharray', '5,5');
-      }
-      g.appendChild(path);
-
-      const markerId = 'arrowhead';
-      if (!this.shadowRoot.getElementById(markerId)) {
+    // Create markers if they don't exist
+    let marker = this.shadowRoot.getElementById('arrowhead');
+    if (!marker) {
         const defs = this.shadowRoot.getElementById('symbol-defs');
-        const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-        marker.setAttribute('id', markerId);
+        marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+        marker.setAttribute('id', 'arrowhead');
         marker.setAttribute('viewBox', '0 0 10 10');
         marker.setAttribute('refX', '10');
         marker.setAttribute('refY', '5');
@@ -270,20 +267,52 @@ export class GsskEditor extends HTMLElement {
         marker.setAttribute('orient', 'auto-start-reverse');
         const arrowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         arrowPath.setAttribute('d', 'M 0 0 L 10 5 L 0 10 z');
+        arrowPath.setAttribute('fill', '#475569');
         marker.appendChild(arrowPath);
         defs.appendChild(marker);
-      }
-      path.setAttribute('marker-end', `url(#${markerId})`);
+    }
+
+    this._value.edges.forEach(edge => {
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.setAttribute('data-id', edge.id);
+      g.setAttribute('class', `edge-group ${this._selectedId === edge.id ? 'selected' : ''}`);
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      const d = this.calculatePathData(edge);
+      path.setAttribute('d', d);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', '#475569');
+      path.setAttribute('stroke-width', '2');
+      path.setAttribute('marker-end', 'url(#arrowhead)');
 
       if (edge.logic === 'interaction') {
+        path.setAttribute('stroke-dasharray', '5,5');
+      }
+      g.appendChild(path);
+
+      if (edge.logic === 'interaction' || edge.control_node) {
         const midPoint = this.getPathMidpoint(edge);
         const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
         use.setAttribute('href', '#gate');
-        use.setAttribute('x', midPoint.x - 20);
-        use.setAttribute('y', midPoint.y - 20);
-        use.setAttribute('width', '40');
-        use.setAttribute('height', '40');
+        use.setAttribute('x', midPoint.x - 15);
+        use.setAttribute('y', midPoint.y - 15);
+        use.setAttribute('width', '30');
+        use.setAttribute('height', '30');
         g.appendChild(use);
+
+        if (edge.control_node) {
+            const controlNode = this._value.nodes.find(n => n.id === edge.control_node);
+            if (controlNode) {
+                const controlLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                controlLine.setAttribute('x1', controlNode.visual.x);
+                controlLine.setAttribute('y1', controlNode.visual.y);
+                controlLine.setAttribute('x2', midPoint.x);
+                controlLine.setAttribute('y2', midPoint.y);
+                controlLine.setAttribute('stroke', '#94a3b8');
+                controlLine.setAttribute('stroke-dasharray', '2,2');
+                g.appendChild(controlLine);
+            }
+        }
       }
 
       layer.appendChild(g);
@@ -294,7 +323,18 @@ export class GsskEditor extends HTMLElement {
     const originNode = this._value.nodes.find(n => n.id === edge.origin);
     const targetNode = this._value.nodes.find(n => n.id === edge.target);
     if (originNode && targetNode) {
-        return `M ${originNode.visual.x},${originNode.visual.y} L ${targetNode.visual.x},${targetNode.visual.y}`;
+        // Adjust points to node boundaries
+        const dx = targetNode.visual.x - originNode.visual.x;
+        const dy = targetNode.visual.y - originNode.visual.y;
+        const angle = Math.atan2(dy, dx);
+        const offset = 40;
+
+        const x1 = originNode.visual.x + Math.cos(angle) * offset;
+        const y1 = originNode.visual.y + Math.sin(angle) * offset;
+        const x2 = targetNode.visual.x - Math.cos(angle) * (offset + 5);
+        const y2 = targetNode.visual.y - Math.sin(angle) * (offset + 5);
+
+        return `M ${x1},${y1} L ${x2},${y2}`;
     }
     return '';
   }
@@ -320,11 +360,6 @@ export class GsskEditor extends HTMLElement {
     const svg = this.shadowRoot.getElementById('svg-canvas');
     const paletteItems = this.shadowRoot.querySelectorAll('.palette-item');
     const closeProps = this.shadowRoot.getElementById('close-props');
-    const closePalette = this.shadowRoot.getElementById('close-palette');
-
-    closePalette.addEventListener('click', () => {
-        this.shadowRoot.getElementById('palette').classList.add('hidden');
-    });
 
     svg.removeEventListener('mousedown', this._onMouseDown);
     svg.addEventListener('mousedown', this._onMouseDown);
@@ -334,6 +369,9 @@ export class GsskEditor extends HTMLElement {
 
     window.removeEventListener('mouseup', this._onMouseUp);
     window.addEventListener('mouseup', this._onMouseUp);
+
+    svg.removeEventListener('wheel', this._onWheel);
+    svg.addEventListener('wheel', this._onWheel, { passive: false });
 
     paletteItems.forEach(item => {
       item.addEventListener('dragstart', (e) => {
@@ -375,6 +413,7 @@ export class GsskEditor extends HTMLElement {
         panel.style.left = `${e.clientX - startX}px`;
         panel.style.top = `${e.clientY - startY}px`;
         panel.style.right = 'auto';
+        panel.style.bottom = 'auto';
       };
 
       const onUp = () => {
@@ -402,20 +441,35 @@ export class GsskEditor extends HTMLElement {
     }
 
     const target = e.target.closest('.node-group');
+    const edgeTarget = e.target.closest('.edge-group');
+
     if (target) {
       this._isDragging = true;
       this._draggedElement = target;
       this._selectedId = target.dataset.id;
+      this._selectedType = 'node';
       this.dispatchEvent(new CustomEvent('node-select', { detail: this._value.nodes.find(n => n.id === this._selectedId) }));
       this.showPropertyPanel();
+      this.renderNodes(); // update selection visual
 
       this._dragOffset = {
           x: svgP.x - this._value.nodes.find(n => n.id === this._selectedId).visual.x,
           y: svgP.y - this._value.nodes.find(n => n.id === this._selectedId).visual.y
       };
+    } else if (edgeTarget) {
+        this._selectedId = edgeTarget.dataset.id;
+        this._selectedType = 'edge';
+        this.showPropertyPanel();
+        this.renderNodes(); // to clear node selection
     } else {
         this._selectedId = null;
+        this._selectedType = null;
+        this.renderNodes();
         this.shadowRoot.getElementById('property-panel').classList.add('hidden');
+
+        // Start panning
+        this._isPanning = true;
+        this._lastMousePos = { x: e.clientX, y: e.clientY };
     }
   }
 
@@ -431,6 +485,16 @@ export class GsskEditor extends HTMLElement {
         return;
     }
 
+    if (this._isPanning) {
+        const dx = (e.clientX - this._lastMousePos.x) * this._zoom;
+        const dy = (e.clientY - this._lastMousePos.y) * this._zoom;
+        this._viewBox.x -= dx;
+        this._viewBox.y -= dy;
+        this._lastMousePos = { x: e.clientX, y: e.clientY };
+        this.update();
+        return;
+    }
+
     if (!this._isDragging || !this._draggedElement) return;
     let x = svgP.x - this._dragOffset.x;
     let y = svgP.y - this._dragOffset.y;
@@ -443,6 +507,7 @@ export class GsskEditor extends HTMLElement {
       node.visual.x = x;
       node.visual.y = y;
       this.update();
+      this.validate();
       this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
     }
   }
@@ -465,6 +530,26 @@ export class GsskEditor extends HTMLElement {
     }
     this._isDragging = false;
     this._draggedElement = null;
+    this._isPanning = false;
+  }
+
+  onWheel(e) {
+    e.preventDefault();
+    const zoomFactor = 1.1;
+    const delta = e.deltaY > 0 ? zoomFactor : 1 / zoomFactor;
+
+    const svgP = this.getSVGPoint(e);
+
+    const newW = this._viewBox.w * delta;
+    const newH = this._viewBox.h * delta;
+
+    this._viewBox.x = svgP.x - (svgP.x - this._viewBox.x) * delta;
+    this._viewBox.y = svgP.y - (svgP.y - this._viewBox.y) * delta;
+    this._viewBox.w = newW;
+    this._viewBox.h = newH;
+    this._zoom = this._viewBox.w / this.offsetWidth;
+
+    this.update();
   }
 
   createTempWire() {
@@ -475,7 +560,8 @@ export class GsskEditor extends HTMLElement {
       line.setAttribute('y1', this._wireStartPos.y);
       line.setAttribute('x2', this._wireStartPos.x);
       line.setAttribute('y2', this._wireStartPos.y);
-      line.setAttribute('stroke', 'gray');
+      line.setAttribute('stroke', '#3b82f6');
+      line.setAttribute('stroke-width', '2');
       line.setAttribute('stroke-dasharray', '5,5');
       svg.appendChild(line);
   }
@@ -494,6 +580,7 @@ export class GsskEditor extends HTMLElement {
           }
       };
       this._value.edges.push(newEdge);
+      this.validate();
       this.update();
       this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
   }
@@ -503,6 +590,7 @@ export class GsskEditor extends HTMLElement {
       if (edge) {
           edge.control_node = controlId;
           edge.logic = 'interaction';
+          this.validate();
           this.update();
           this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
       }
@@ -517,15 +605,16 @@ export class GsskEditor extends HTMLElement {
     const x = Math.round(svgP.x / this._gridSize) * this._gridSize;
     const y = Math.round(svgP.y / this._gridSize) * this._gridSize;
 
-    const id = `node-${Date.now()}`;
+    const id = `${type}-${Date.now()}`;
     const newNode = {
       id,
       type,
-      value: 0,
+      value: type === 'storage' ? 10 : 0,
       visual: { x, y, label: type.charAt(0).toUpperCase() + type.slice(1), capacity: 100 }
     };
 
     this._value.nodes.push(newNode);
+    this.validate();
     this.update();
     this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
   }
@@ -547,34 +636,137 @@ export class GsskEditor extends HTMLElement {
   showPropertyPanel() {
     const panel = this.shadowRoot.getElementById('property-panel');
     const content = this.shadowRoot.getElementById('props-content');
-    const node = this._value.nodes.find(n => n.id === this._selectedId);
-    if (!node) return;
 
-    panel.classList.remove('hidden');
-    content.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 8px;">
-        <label>ID: <input type="text" value="${node.id}" readonly></label>
-        <label>Label: <input type="text" id="prop-label" value="${node.visual.label || ''}"></label>
-        <label>Value: <input type="number" id="prop-value" value="${node.value}"></label>
-        <label>Capacity: <input type="number" id="prop-capacity" value="${node.visual.capacity || 100}"></label>
-      </div>
-    `;
+    if (this._selectedType === 'node') {
+        const node = this._value.nodes.find(n => n.id === this._selectedId);
+        if (!node) return;
 
-    content.querySelector('#prop-label').addEventListener('input', (e) => {
-        node.visual.label = e.target.value;
-        this.update();
-        this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
-    });
-    content.querySelector('#prop-value').addEventListener('input', (e) => {
-        node.value = parseFloat(e.target.value);
-        this.update();
-        this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
-    });
-    content.querySelector('#prop-capacity').addEventListener('input', (e) => {
-        node.visual.capacity = parseFloat(e.target.value);
-        this.update();
-        this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
-    });
+        panel.classList.remove('hidden');
+        content.innerHTML = `
+          <div class="prop-group">
+            <label>ID</label>
+            <input type="text" id="prop-id" value="${node.id}">
+          </div>
+          <div class="prop-group">
+            <label>Label</label>
+            <input type="text" id="prop-label" value="${node.visual.label || ''}">
+          </div>
+          <div class="prop-group">
+            <label>Initial Value</label>
+            <input type="number" id="prop-value" step="0.1" value="${node.value}">
+          </div>
+          ${node.type === 'storage' ? `
+          <div class="prop-group">
+            <label>Capacity</label>
+            <input type="number" id="prop-capacity" value="${node.visual.capacity || 100}">
+          </div>
+          ` : ''}
+          <div class="prop-group">
+            <label>Type</label>
+            <select id="prop-type">
+                <option value="source" ${node.type === 'source' ? 'selected' : ''}>Source</option>
+                <option value="storage" ${node.type === 'storage' ? 'selected' : ''}>Storage</option>
+                <option value="sink" ${node.type === 'sink' ? 'selected' : ''}>Sink</option>
+                <option value="constant" ${node.type === 'constant' ? 'selected' : ''}>Constant</option>
+            </select>
+          </div>
+        `;
+
+        const updateProp = (id, field, isVisual = false) => {
+            content.querySelector(id).addEventListener('change', (e) => {
+                const val = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
+                if (isVisual) node.visual[field] = val;
+                else node[field] = val;
+
+                if (field === 'id') {
+                    this._value.edges.forEach(edge => {
+                        if (edge.origin === this._selectedId) edge.origin = val;
+                        if (edge.target === this._selectedId) edge.target = val;
+                        if (edge.control_node === this._selectedId) edge.control_node = val;
+                    });
+                    this._selectedId = val;
+                }
+
+                this.validate();
+                this.update();
+                this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
+            });
+        };
+
+        updateProp('#prop-id', 'id');
+        updateProp('#prop-label', 'label', true);
+        updateProp('#prop-value', 'value');
+        if (node.type === 'storage') updateProp('#prop-capacity', 'capacity', true);
+        updateProp('#prop-type', 'type');
+    } else if (this._selectedType === 'edge') {
+        const edge = this._value.edges.find(e => e.id === this._selectedId);
+        if (!edge) return;
+
+        panel.classList.remove('hidden');
+        content.innerHTML = `
+          <div class="prop-group">
+            <label>ID</label>
+            <input type="text" id="prop-edge-id" value="${edge.id}">
+          </div>
+          <div class="prop-group">
+            <label>Logic</label>
+            <select id="prop-edge-logic">
+                <option value="linear" ${edge.logic === 'linear' ? 'selected' : ''}>Linear</option>
+                <option value="interaction" ${edge.logic === 'interaction' ? 'selected' : ''}>Interaction</option>
+            </select>
+          </div>
+          <div class="prop-group">
+            <label>Parameter (k)</label>
+            <input type="number" id="prop-edge-k" step="0.001" value="${edge.params?.k || 0.1}">
+          </div>
+          <div class="prop-group">
+            <label>Control Node</label>
+            <input type="text" id="prop-edge-control" value="${edge.control_node || ''}">
+          </div>
+          <button id="delete-edge" style="width:100%; margin-top:10px; color:red;">Delete Edge</button>
+        `;
+
+        content.querySelector('#prop-edge-id').addEventListener('change', (e) => {
+            edge.id = e.target.value;
+            this._selectedId = edge.id;
+            this.validate();
+            this.update();
+            this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
+        });
+
+        content.querySelector('#prop-edge-logic').addEventListener('change', (e) => {
+            edge.logic = e.target.value;
+            this.validate();
+            this.update();
+            this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
+        });
+
+        content.querySelector('#prop-edge-k').addEventListener('change', (e) => {
+            if (!edge.params) edge.params = {};
+            edge.params.k = parseFloat(e.target.value);
+            this.validate();
+            this.update();
+            this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
+        });
+
+        content.querySelector('#prop-edge-control').addEventListener('change', (e) => {
+            edge.control_node = e.target.value;
+            if (edge.control_node) edge.logic = 'interaction';
+            this.validate();
+            this.update();
+            this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
+        });
+
+        content.querySelector('#delete-edge').addEventListener('click', () => {
+            this._value.edges = this._value.edges.filter(e => e.id !== this._selectedId);
+            this._selectedId = null;
+            this._selectedType = null;
+            panel.classList.add('hidden');
+            this.validate();
+            this.update();
+            this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
+        });
+    }
   }
 }
 

@@ -82,7 +82,7 @@ test('should update state and visuals', async ({ page }) => {
   const editor = page.locator('gssk-editor');
 
   await editor.evaluate((el) => {
-    el.updateState(new Float64Array([0, 100, 0]));
+    el.updateState({ 'grass': 100 });
   });
 
   await page.waitForTimeout(100);
