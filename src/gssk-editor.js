@@ -77,8 +77,15 @@ export class GsskEditor extends HTMLElement {
 
   loadModel(json) {
     this._value = JSON.parse(JSON.stringify(json));
+    this._value.nodes.forEach(node => {
+        node.currentValue = node.value;
+    });
     this.validate();
     this.update();
+    const panel = this.shadowRoot.getElementById('property-panel');
+    if (panel && !panel.classList.contains('hidden')) {
+        this.showPropertyPanel();
+    }
   }
 
   validate() {
@@ -101,13 +108,14 @@ export class GsskEditor extends HTMLElement {
     if (!this._value || !this._value.nodes) return;
     this._value.nodes.forEach((node) => {
       if (stateMap[node.id] !== undefined) {
-        node.value = stateMap[node.id];
+        node.currentValue = stateMap[node.id];
       }
     });
     if (!this._animationRequested) {
       this._animationRequested = true;
       requestAnimationFrame(() => {
         this.updateVisuals();
+        this.updatePropertyPanelValues();
         this._animationRequested = false;
       });
     }
@@ -117,13 +125,26 @@ export class GsskEditor extends HTMLElement {
     this._value.nodes.forEach(node => {
         const fillElement = this.shadowRoot.querySelector(`#fill-${node.id}`);
         if (fillElement && node.visual && node.visual.capacity) {
-            const ratio = Math.min(1, Math.max(0, node.value / node.visual.capacity));
+            const val = node.currentValue !== undefined ? node.currentValue : node.value;
+            const ratio = Math.min(1, Math.max(0, val / node.visual.capacity));
             const fillHeight = ratio * 60;
             fillElement.setAttribute('height', fillHeight.toString());
             fillElement.setAttribute('y', (80 - fillHeight).toString());
         }
     });
     // Optional: add flow animation here if state includes flows
+  }
+
+  updatePropertyPanelValues() {
+    if (this._selectedType === 'node') {
+        const node = this._value.nodes.find(n => n.id === this._selectedId);
+        if (node) {
+            const currentInput = this.shadowRoot.getElementById('prop-current-value');
+            if (currentInput) {
+                currentInput.value = (node.currentValue !== undefined ? node.currentValue : node.value).toFixed(2);
+            }
+        }
+    }
   }
 
   render() {
@@ -660,6 +681,10 @@ export class GsskEditor extends HTMLElement {
             <label>Initial Value</label>
             <input type="number" id="prop-value" step="0.1" value="${node.value}">
           </div>
+          <div class="prop-group">
+            <label>Current Value</label>
+            <input type="number" id="prop-current-value" step="0.1" value="${(node.currentValue !== undefined ? node.currentValue : node.value).toFixed(2)}" readonly>
+          </div>
           ${node.type === 'storage' ? `
           <div class="prop-group">
             <label>Capacity</label>
@@ -682,6 +707,10 @@ export class GsskEditor extends HTMLElement {
                 const val = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
                 if (isVisual) node.visual[field] = val;
                 else node[field] = val;
+
+                if (field === 'value') {
+                    node.currentValue = val;
+                }
 
                 if (field === 'id') {
                     this._value.edges.forEach(edge => {
