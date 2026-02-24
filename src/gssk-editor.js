@@ -29,7 +29,7 @@ export class GsskEditor extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ['symbols', 'readonly', 'grid', 'invalid'];
+    return ['symbols', 'readonly', 'grid', 'invalid', 'theme'];
   }
 
   connectedCallback() {
@@ -52,6 +52,9 @@ export class GsskEditor extends HTMLElement {
         break;
       case 'grid':
         this._gridSize = parseInt(newValue, 10) || 20;
+        break;
+      case 'theme':
+        // No internal state needed, handled by CSS
         break;
     }
     this.update();
@@ -192,6 +195,7 @@ export class GsskEditor extends HTMLElement {
       use.setAttribute('href', `#${symbolId}`);
       use.setAttribute('width', '80');
       use.setAttribute('height', '80');
+      use.setAttribute('color', 'var(--text-color)');
       g.appendChild(use);
 
       if (node.type === 'storage') {
@@ -267,7 +271,7 @@ export class GsskEditor extends HTMLElement {
         marker.setAttribute('orient', 'auto-start-reverse');
         const arrowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         arrowPath.setAttribute('d', 'M 0 0 L 10 5 L 0 10 z');
-        arrowPath.setAttribute('fill', '#475569');
+        arrowPath.setAttribute('fill', 'var(--edge-color)');
         marker.appendChild(arrowPath);
         defs.appendChild(marker);
     }
@@ -281,7 +285,7 @@ export class GsskEditor extends HTMLElement {
       const d = this.calculatePathData(edge);
       path.setAttribute('d', d);
       path.setAttribute('fill', 'none');
-      path.setAttribute('stroke', '#475569');
+      path.setAttribute('stroke', 'var(--edge-color)');
       path.setAttribute('stroke-width', '2');
       path.setAttribute('marker-end', 'url(#arrowhead)');
 
@@ -298,6 +302,7 @@ export class GsskEditor extends HTMLElement {
         use.setAttribute('y', midPoint.y - 15);
         use.setAttribute('width', '30');
         use.setAttribute('height', '30');
+        use.setAttribute('color', 'var(--edge-color)');
         g.appendChild(use);
 
         if (edge.control_node) {
@@ -308,7 +313,7 @@ export class GsskEditor extends HTMLElement {
                 controlLine.setAttribute('y1', controlNode.visual.y);
                 controlLine.setAttribute('x2', midPoint.x);
                 controlLine.setAttribute('y2', midPoint.y);
-                controlLine.setAttribute('stroke', '#94a3b8');
+                controlLine.setAttribute('stroke', 'var(--grid-color)');
                 controlLine.setAttribute('stroke-dasharray', '2,2');
                 g.appendChild(controlLine);
             }
