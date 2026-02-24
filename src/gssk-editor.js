@@ -164,6 +164,7 @@ export class GsskEditor extends HTMLElement {
           <svg id="svg-canvas" viewBox="${this._viewBox.x} ${this._viewBox.y} ${this._viewBox.w} ${this._viewBox.h}">
             <defs id="symbol-defs"></defs>
             <g id="grid-layer"></g>
+            <g id="boundaries-layer"></g>
             <g id="edges-layer"></g>
             <g id="nodes-layer"></g>
           </svg>
@@ -190,8 +191,41 @@ export class GsskEditor extends HTMLElement {
     if (defs) {
       defs.innerHTML = SYMBOLS.odum + SYMBOLS.generic;
     }
+    this.renderBoundaries();
     this.renderNodes();
     this.renderEdges();
+  }
+
+  renderBoundaries() {
+    const layer = this.shadowRoot.getElementById('boundaries-layer');
+    if (!layer) return;
+    layer.innerHTML = '';
+    if (!this._value.boundaries) return;
+
+    this._value.boundaries.forEach(boundary => {
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', boundary.x);
+      rect.setAttribute('y', boundary.y);
+      rect.setAttribute('width', boundary.w);
+      rect.setAttribute('height', boundary.h);
+      rect.setAttribute('rx', '15');
+      rect.setAttribute('ry', '15');
+      rect.setAttribute('fill', 'none');
+      rect.setAttribute('stroke', 'var(--grid-color)');
+      rect.setAttribute('stroke-width', '2');
+      rect.setAttribute('stroke-dasharray', '5,5');
+      layer.appendChild(rect);
+
+      if (boundary.label) {
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', boundary.x + 10);
+          text.setAttribute('y', boundary.y + 20);
+          text.setAttribute('class', 'node-label');
+          text.style.fontStyle = 'italic';
+          text.textContent = boundary.label;
+          layer.appendChild(text);
+      }
+    });
   }
 
   renderNodes() {
