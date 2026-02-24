@@ -5,6 +5,15 @@ const ajv = new Ajv();
 const schema = {
   type: 'object',
   properties: {
+    settings: {
+      type: 'object',
+      properties: {
+        dt: { type: 'number' },
+        t_start: { type: 'number' },
+        t_end: { type: 'number' },
+        method: { type: 'string' }
+      }
+    },
     nodes: {
       type: 'array',
       items: {

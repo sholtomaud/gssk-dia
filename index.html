@@ -3,116 +3,598 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GSSK Editor Demo</title>
+    <title>GSSK Diagrammatic Interface (gssk-dia)</title>
     <style>
+        :root {
+            --top-bar-height: 60px;
+            --side-panel-width: 350px;
+            --primary-color: #3b82f6;
+            --bg-color: #f8fafc;
+            --border-color: #e2e8f0;
+        }
+
         body, html {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             overflow: hidden;
+            background-color: var(--bg-color);
+            color: #1e293b;
+        }
+
+        header {
+            height: var(--top-bar-height);
+            background: white;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            justify-content: space-between;
+            box-sizing: border-box;
+            z-index: 100;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: -0.025em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        button {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: white;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #475569;
+        }
+
+        button:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #1e293b;
+        }
+
+        button.primary {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        button.primary:hover {
+            background: #2563eb;
+            box-shadow: 0 4px 6px -1px rgb(59 130 246 / 0.3);
+        }
+
+        .main-container {
+            display: flex;
+            height: calc(100% - var(--top-bar-height));
+            width: 100%;
+            position: relative;
+        }
+
+        #editor-wrapper {
+            flex-grow: 1;
+            position: relative;
+            background: #f1f5f9;
+            overflow: hidden;
+        }
+
+        gssk-editor {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        #rhs-panel {
+            width: var(--side-panel-width);
+            border-left: 1px solid var(--border-color);
+            background: white;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 20;
+        }
+
+        #rhs-panel.maximized {
+            width: 100%;
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+        }
+
+        .panel-section {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
         }
-        header {
-            padding: 10px;
-            background: #2c3e50;
-            color: white;
+
+        .panel-header {
+            font-weight: 600;
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        gssk-editor {
+
+        #simulation-chart {
             flex-grow: 1;
+            min-height: 250px;
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            overflow: hidden;
         }
-        .controls {
+
+        #log-console {
+            height: 200px;
+            background: #0f172a;
+            color: #e2e8f0;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.75rem;
+            padding: 12px;
+            overflow-y: auto;
+            border-radius: 8px;
+            border: 1px solid #1e293b;
+        }
+
+        .log-entry {
+            margin-bottom: 6px;
+            line-height: 1.5;
+            border-left: 2px solid transparent;
+            padding-left: 8px;
+        }
+
+        .log-time { color: #64748b; margin-right: 8px; font-size: 0.7rem; }
+        .log-error { color: #f87171; border-left-color: #f87171; }
+        .log-info { color: #60a5fa; border-left-color: #60a5fa; }
+        .log-success { color: #4ade80; border-left-color: #4ade80; }
+
+        #toggle-rhs {
+            position: absolute;
+            left: -12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
             display: flex;
-            gap: 10px;
-        }
-        button {
-            padding: 5px 15px;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
+            z-index: 30;
+            box-shadow: 0 2px 4px rgb(0 0 0 / 0.1);
+        }
+
+        .invalid-indicator {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ef4444;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            box-shadow: 0 4px 6px -1px rgb(239 68 68 / 0.3);
+            display: none;
+            z-index: 50;
+        }
+
+        select {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: white;
+            font-size: 0.875rem;
+            color: #1e293b;
+            outline: none;
+        }
+
+        select:focus {
+            border-color: var(--primary-color);
+            ring: 2px solid var(--primary-color);
         }
     </style>
 </head>
 <body>
     <header>
-        <div>GSSK Diagram Editor</div>
+        <div class="logo">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-color)"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
+            gssk-dia
+        </div>
         <div class="controls">
-            <button id="toggle-symbols">Switch to Generic</button>
-            <button id="toggle-readonly">Toggle ReadOnly</button>
-            <button id="run-sim">Run Simulation</button>
-            <button id="export-json">Export JSON</button>
+            <select id="example-select">
+                <option value="">Select Example...</option>
+                <option value="basic">Basic Source-Storage-Sink</option>
+                <option value="predator-prey">Lotka-Volterra</option>
+                <option value="industrial">Industrial Ecosystem</option>
+            </select>
+            <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 8px;"></div>
+            <button id="run-sim" class="primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                Run
+            </button>
+            <button id="stop-sim" style="display:none">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"/></svg>
+                Stop
+            </button>
+            <button id="reset-sim">Reset</button>
+            <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 8px;"></div>
+            <button id="toggle-symbols">Odum Symbols</button>
+            <button id="export-json" title="Export to Console">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </button>
         </div>
     </header>
-    <gssk-editor id="editor"></gssk-editor>
+
+    <div class="main-container">
+        <div id="editor-wrapper">
+            <div id="invalid-msg" class="invalid-indicator">Invalid Model Configuration</div>
+            <gssk-editor id="editor" symbols="odum"></gssk-editor>
+        </div>
+
+        <aside id="rhs-panel">
+            <div id="toggle-rhs">&rsaquo;</div>
+            <div class="panel-section" id="log-section" style="height: 250px; min-height: 100px;">
+                <div class="panel-header" id="log-header" style="cursor: ns-resize;">
+                    Log Console
+                    <button id="maximize-rhs" style="padding: 4px 8px; font-size: 0.65rem;">Maximize</button>
+                </div>
+                <div id="log-console" style="flex-grow: 1;">
+                    <div class="log-entry"><span class="log-time">00:00:00</span> <span class="log-info">System ready.</span></div>
+                </div>
+            </div>
+            <div class="panel-section" style="flex-grow: 1;">
+                <div class="panel-header">
+                    Simulation Results (Time-Series)
+                </div>
+                <div id="simulation-chart">
+                    <svg id="chart-svg" width="100%" height="100%"></svg>
+                </div>
+            </div>
+        </aside>
+    </div>
+
     <script type="module" src="/src/gssk-editor.js"></script>
     <script type="module">
-        const editor = document.getElementById('editor');
+        import createGSSK from 'gssk';
+        import gsskUrl from 'gssk/dist/gssk.wasm?url';
 
-        const initialModel = {
-            nodes: [
-                { id: 'sun', type: 'source', value: 0, visual: { x: 100, y: 150, label: 'Sun' } },
-                { id: 'grass', type: 'storage', value: 10.0, visual: { x: 300, y: 150, label: 'Grass Biomass', capacity: 100.0 } },
-                { id: 'heat_sink', type: 'sink', value: 0, visual: { x: 500, y: 150, label: 'Heat Sink' } }
-            ],
-            edges: [
-                { id: 'production', origin: 'sun', target: 'grass', logic: 'linear', params: { k: 0.1 }, visual: { points: [[100, 150], [300, 150]], max_flow: 5.0 } },
-                { id: 'respiration', origin: 'grass', target: 'heat_sink', logic: 'linear', params: { k: 0.05 }, visual: { points: [[300, 150], [500, 150]], max_flow: 2.0 } }
-            ]
+        const editor = document.getElementById('editor');
+        const runBtn = document.getElementById('run-sim');
+        const stopBtn = document.getElementById('stop-sim');
+        const resetBtn = document.getElementById('reset-sim');
+        const logConsole = document.getElementById('log-console');
+        const rhsPanel = document.getElementById('rhs-panel');
+        const toggleRhs = document.getElementById('toggle-rhs');
+        const maximizeRhs = document.getElementById('maximize-rhs');
+        const invalidMsg = document.getElementById('invalid-msg');
+
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            const time = new Date().toTimeString().split(' ')[0];
+            entry.innerHTML = `<span class="log-time">${time}</span> ${message}`;
+            logConsole.appendChild(entry);
+            logConsole.scrollTop = logConsole.scrollHeight;
+        }
+
+        toggleRhs.addEventListener('click', () => {
+            const isCollapsed = rhsPanel.style.width === '0px';
+            rhsPanel.style.width = isCollapsed ? 'var(--side-panel-width)' : '0px';
+            toggleRhs.innerHTML = isCollapsed ? '&rsaquo;' : '&lsaquo;';
+        });
+
+        maximizeRhs.addEventListener('click', () => {
+            rhsPanel.classList.toggle('maximized');
+            maximizeRhs.textContent = rhsPanel.classList.contains('maximized') ? 'Restore' : 'Maximize';
+        });
+
+        // Resize Log Console
+        const logHeader = document.getElementById('log-header');
+        const logSection = document.getElementById('log-section');
+        let isResizingLog = false;
+
+        logHeader.addEventListener('mousedown', (e) => {
+            if (e.target.tagName === 'BUTTON') return;
+            isResizingLog = true;
+            document.body.style.cursor = 'ns-resize';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isResizingLog) return;
+            const rhsRect = rhsPanel.getBoundingClientRect();
+            const newHeight = e.clientY - rhsRect.top;
+            if (newHeight > 100 && newHeight < rhsRect.height - 100) {
+                logSection.style.height = `${newHeight}px`;
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            isResizingLog = false;
+            document.body.style.cursor = 'default';
+        });
+
+        const EXAMPLES = {
+            basic: {
+                settings: { dt: 0.1, t_start: 0, t_end: 100, method: 'euler' },
+                nodes: [
+                    { id: 'sun', type: 'source', value: 0, visual: { x: 100, y: 150, label: 'Sun' } },
+                    { id: 'grass', type: 'storage', value: 10.0, visual: { x: 300, y: 150, label: 'Grass Biomass', capacity: 100.0 } },
+                    { id: 'heat_sink', type: 'sink', value: 0, visual: { x: 500, y: 150, label: 'Heat Sink' } }
+                ],
+                edges: [
+                    { id: 'production', origin: 'sun', target: 'grass', logic: 'linear', params: { k: 0.1 }, visual: { points: [], max_flow: 5.0 } },
+                    { id: 'respiration', origin: 'grass', target: 'heat_sink', logic: 'linear', params: { k: 0.05 }, visual: { points: [], max_flow: 2.0 } }
+                ]
+            },
+            'predator-prey': {
+                settings: { dt: 0.1, t_start: 0, t_end: 100, method: 'rk4' },
+                nodes: [
+                    { id: 'prey', type: 'storage', value: 50.0, visual: { x: 200, y: 200, label: 'Prey', capacity: 200 } },
+                    { id: 'predator', type: 'storage', value: 10.0, visual: { x: 500, y: 200, label: 'Predator', capacity: 100 } },
+                    { id: 'sink', type: 'sink', value: 0, visual: { x: 350, y: 400, label: 'Loss' } }
+                ],
+                edges: [
+                    { id: 'transfer', origin: 'prey', target: 'predator', logic: 'linear', params: { k: 0.1 }, visual: { points: [] } },
+                    { id: 'loss', origin: 'predator', target: 'sink', logic: 'linear', params: { k: 0.05 }, visual: { points: [] } }
+                ]
+            },
+            industrial: {
+                settings: { dt: 0.1, t_start: 0, t_end: 100, method: 'euler' },
+                nodes: [
+                    { id: 'resource', type: 'source', value: 0, visual: { x: 100, y: 200, label: 'Raw Resource' } },
+                    { id: 'factory', type: 'storage', value: 20.0, visual: { x: 300, y: 200, label: 'Production', capacity: 1000 } },
+                    { id: 'market', type: 'storage', value: 5.0, visual: { x: 500, y: 200, label: 'Inventory', capacity: 500 } },
+                    { id: 'waste', type: 'sink', value: 0, visual: { x: 700, y: 200, label: 'Environment' } }
+                ],
+                edges: [
+                    { id: 'input', origin: 'resource', target: 'factory', logic: 'linear', params: { k: 0.5 }, visual: { points: [] } },
+                    { id: 'output', origin: 'factory', target: 'market', logic: 'linear', params: { k: 0.2 }, visual: { points: [] } },
+                    { id: 'sale', origin: 'market', target: 'waste', logic: 'linear', params: { k: 0.3 }, visual: { points: [] } },
+                    { id: 'loss', origin: 'factory', target: 'waste', logic: 'linear', params: { k: 0.05 }, visual: { points: [] } }
+                ]
+            }
         };
 
-        editor.loadModel(initialModel);
+        const exampleSelect = document.getElementById('example-select');
+        exampleSelect.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (val && EXAMPLES[val]) {
+                stopSimulation();
+                editor.loadModel(EXAMPLES[val]);
+                log(`Loaded example: ${val}`);
+            }
+        });
+
+        // Load initial example
+        editor.loadModel(EXAMPLES.basic);
+
+        let gsskModule;
+        let kernelPtr = 0;
+        let isSimulating = false;
+        let simInterval = null;
+        let chartData = [];
+        let startTime = 0;
+
+        async function initGssk() {
+            try {
+                gsskModule = await createGSSK({
+                    locateFile: (path) => path.endsWith('.wasm') ? gsskUrl : path
+                });
+                log('GSSK WASM Runtime loaded.', 'success');
+            } catch (e) {
+                log('Failed to load GSSK WASM: ' + e.message, 'error');
+            }
+        }
+        initGssk();
+
+        editor.addEventListener('change', (e) => {
+            const isInvalid = editor.hasAttribute('invalid');
+            invalidMsg.style.display = isInvalid ? 'block' : 'none';
+            if (isSimulating) stopSimulation();
+        });
+
+        runBtn.addEventListener('click', startSimulation);
+        stopBtn.addEventListener('click', stopSimulation);
+        resetBtn.addEventListener('click', resetSimulation);
+
+        function startSimulation() {
+            if (editor.hasAttribute('invalid')) {
+                log('Cannot run simulation: Model is invalid.', 'error');
+                return;
+            }
+
+            try {
+                const model = editor.getJson();
+                const jsonStr = JSON.stringify(model);
+                const bytes = gsskModule.lengthBytesUTF8(jsonStr) + 1;
+                const ptr = gsskModule._malloc(bytes);
+                gsskModule.stringToUTF8(jsonStr, ptr, bytes);
+
+                if (kernelPtr) gsskModule._GSSK_Free(kernelPtr);
+                kernelPtr = gsskModule._GSSK_Init(ptr);
+                gsskModule._free(ptr);
+
+                if (kernelPtr === 0) {
+                    throw new Error('Kernel initialization failed.');
+                }
+
+                log('Simulation started.', 'success');
+                isSimulating = true;
+                runBtn.style.display = 'none';
+                stopBtn.style.display = 'flex';
+
+                chartData = [];
+                startTime = Date.now();
+
+                const dt = gsskModule._GSSK_GetDt(kernelPtr) || 0.1;
+                simInterval = setInterval(() => step(dt), 50);
+            } catch (e) {
+                log('Simulation error: ' + e.message, 'error');
+            }
+        }
+
+        function step(dt) {
+            if (!isSimulating || !kernelPtr) return;
+
+            gsskModule._GSSK_Step(kernelPtr, dt);
+
+            const statePtr = gsskModule._GSSK_GetState(kernelPtr);
+            const size = gsskModule._GSSK_GetStateSize(kernelPtr);
+            const state = gsskModule.HEAPF64.subarray(statePtr / 8, statePtr / 8 + size);
+
+            const stateMap = {};
+            for (let i = 0; i < size; i++) {
+                const idPtr = gsskModule._GSSK_GetNodeID(kernelPtr, i);
+                const id = gsskModule.UTF8ToString(idPtr);
+                stateMap[id] = state[i];
+            }
+
+            editor.updateState(stateMap);
+
+            // Record data for chart
+            const model = editor.getJson();
+            const time = (Date.now() - startTime) / 1000;
+            const entry = { time };
+            model.nodes.forEach((node, i) => {
+                if (node.type === 'storage') {
+                    entry[node.id] = state[i];
+                }
+            });
+            chartData.push(entry);
+            if (chartData.length > 200) chartData.shift();
+
+            updateChart();
+        }
+
+        function stopSimulation() {
+            isSimulating = false;
+            clearInterval(simInterval);
+            runBtn.style.display = 'flex';
+            stopBtn.style.display = 'none';
+            log('Simulation stopped.');
+        }
+
+        function resetSimulation() {
+            stopSimulation();
+            if (kernelPtr) {
+                gsskModule._GSSK_Free(kernelPtr);
+                kernelPtr = 0;
+            }
+            log('Simulation reset.');
+            // Reload model to editor to reset values
+            editor.loadModel(editor.getJson());
+            chartData = [];
+            updateChart();
+        }
+
+        // --- Charting Logic ---
+        const chartSvg = document.getElementById('chart-svg');
+        function updateChart() {
+            if (chartData.length === 0) {
+                chartSvg.innerHTML = '';
+                return;
+            }
+
+            const width = chartSvg.clientWidth || 300;
+            const height = chartSvg.clientHeight || 250;
+            const padding = 30;
+
+            const model = editor.getJson();
+            const storageNodes = model.nodes.filter(n => n.type === 'storage');
+            if (storageNodes.length === 0) return;
+
+            let minX = chartData[0].time;
+            let maxX = chartData[chartData.length - 1].time;
+            let minY = 0;
+            let maxY = 0;
+
+            chartData.forEach(d => {
+                storageNodes.forEach(n => {
+                    if (d[n.id] > maxY) maxY = d[n.id];
+                });
+            });
+            if (maxY === 0) maxY = 100;
+            maxY *= 1.1;
+
+            const scaleX = (x) => padding + (x - minX) / (maxX - minX || 1) * (width - 2 * padding);
+            const scaleY = (y) => height - padding - (y / maxY) * (height - 2 * padding);
+
+            let html = '';
+
+            // Grid lines
+            const ticks = 5;
+            for (let i = 0; i <= ticks; i++) {
+                const y = padding + i * (height - 2 * padding) / ticks;
+                const val = (maxY * (ticks - i) / ticks).toFixed(1);
+                html += `
+                    <line x1="${padding}" y1="${y}" x2="${width - padding}" y2="${y}" stroke="#f1f5f9" stroke-width="1" />
+                    <text x="${padding - 5}" y="${y + 3}" text-anchor="end" font-size="8" fill="#94a3b8">${val}</text>
+                `;
+            }
+
+            html += `
+                <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="#cbd5e1" />
+                <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" stroke="#cbd5e1" />
+                <text x="${width/2}" y="${height - 5}" text-anchor="middle" font-size="10" fill="#64748b">Time (s)</text>
+            `;
+
+            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+            storageNodes.forEach((n, i) => {
+                const color = colors[i % colors.length];
+                let points = chartData.map(d => `${scaleX(d.time)},${scaleY(d[n.id])}`).join(' ');
+                html += `<polyline points="${points}" fill="none" stroke="${color}" stroke-width="2" />`;
+                html += `<text x="${padding + 5}" y="${padding + 12 * (i + 1)}" fill="${color}" font-size="10" font-weight="600">${n.visual.label || n.id}</text>`;
+            });
+
+            chartSvg.innerHTML = html;
+        }
+
+        window.addEventListener('resize', updateChart);
 
         document.getElementById('toggle-symbols').addEventListener('click', () => {
             const current = editor.getAttribute('symbols');
             const next = current === 'odum' ? 'generic' : 'odum';
             editor.setAttribute('symbols', next);
-            document.getElementById('toggle-symbols').textContent = `Switch to ${current === 'odum' ? 'Odum' : 'Generic'}`;
-        });
-
-        document.getElementById('toggle-readonly').addEventListener('click', () => {
-            const current = editor.hasAttribute('readonly');
-            if (current) editor.removeAttribute('readonly');
-            else editor.setAttribute('readonly', '');
-        });
-
-        let simInterval;
-        document.getElementById('run-sim').addEventListener('click', () => {
-            if (simInterval) {
-                clearInterval(simInterval);
-                simInterval = null;
-                document.getElementById('run-sim').textContent = 'Run Simulation';
-                return;
-            }
-            document.getElementById('run-sim').textContent = 'Stop Simulation';
-            let t = 0;
-            simInterval = setInterval(() => {
-                const model = editor.getJson();
-                const state = new Float64Array(model.nodes.length);
-                model.nodes.forEach((n, i) => {
-                    if (n.type === 'storage') {
-                        state[i] = 50 + 40 * Math.sin(t / 10);
-                    } else {
-                        state[i] = 0;
-                    }
-                });
-                editor.updateState(state);
-                t++;
-            }, 100);
+            document.getElementById('toggle-symbols').textContent = next === 'odum' ? 'Generic Symbols' : 'Odum Symbols';
         });
 
         document.getElementById('export-json').addEventListener('click', () => {
-            console.log(JSON.stringify(editor.getJson(), null, 2));
-            alert('JSON exported to console');
-        });
-
-        editor.addEventListener('change', (e) => {
-            console.log('Model changed:', e.detail);
-        });
-
-        editor.addEventListener('node-select', (e) => {
-            console.log('Node selected:', e.detail);
+            const json = editor.getJson();
+            console.log(JSON.stringify(json, null, 2));
+            log('Model exported to console.');
         });
     </script>
 </body>
