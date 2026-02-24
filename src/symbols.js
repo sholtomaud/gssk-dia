@@ -17,7 +17,7 @@ export const SYMBOLS = {
       <rect x="25" y="25" width="50" height="50" fill="none" stroke="currentColor" stroke-width="2" transform="rotate(45 50 50)"/>
     </symbol>
     <symbol id="gate" viewBox="0 0 40 40">
-      <circle cx="20" cy="20" r="10" fill="white" stroke="currentColor" stroke-width="2"/>
+      <circle cx="20" cy="20" r="10" fill="var(--bg-color)" stroke="currentColor" stroke-width="2"/>
       <line x1="15" y1="15" x2="25" y2="25" stroke="currentColor" stroke-width="2"/>
       <line x1="25" y1="15" x2="15" y2="25" stroke="currentColor" stroke-width="2"/>
     </symbol>

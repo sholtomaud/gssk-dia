@@ -10,7 +10,36 @@
             --side-panel-width: 350px;
             --primary-color: #3b82f6;
             --bg-color: #f8fafc;
+            --text-color: #1e293b;
+            --header-bg: white;
             --border-color: #e2e8f0;
+            --panel-bg: white;
+            --control-bg: white;
+            --control-text: #475569;
+            --chart-grid: #f1f5f9;
+            --chart-tick: #94a3b8;
+            --chart-axis: #cbd5e1;
+            --editor-bg: #f1f5f9;
+            --log-bg: #1e293b;
+            --log-text: #e2e8f0;
+            --panel-header-text: #64748b;
+        }
+
+        [data-theme='dark'] {
+            --bg-color: #0f172a;
+            --text-color: #f1f5f9;
+            --header-bg: #1e293b;
+            --border-color: #334155;
+            --panel-bg: #1e293b;
+            --control-bg: #334155;
+            --control-text: #e2e8f0;
+            --chart-grid: #1e293b;
+            --chart-tick: #64748b;
+            --chart-axis: #475569;
+            --editor-bg: #020617;
+            --log-bg: #020617;
+            --log-text: #e2e8f0;
+            --panel-header-text: #94a3b8;
         }
 
         body, html {
@@ -21,12 +50,13 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             overflow: hidden;
             background-color: var(--bg-color);
-            color: #1e293b;
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
         }
 
         header {
             height: var(--top-bar-height);
-            background: white;
+            background: var(--header-bg);
             border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
@@ -35,12 +65,13 @@
             box-sizing: border-box;
             z-index: 100;
             box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            transition: background-color 0.3s, border-color 0.3s;
         }
 
         .logo {
             font-weight: 800;
             font-size: 1.25rem;
-            color: #0f172a;
+            color: var(--text-color);
             display: flex;
             align-items: center;
             gap: 12px;
@@ -57,7 +88,7 @@
             padding: 8px 16px;
             border-radius: 8px;
             border: 1px solid var(--border-color);
-            background: white;
+            background: var(--control-bg);
             cursor: pointer;
             font-size: 0.875rem;
             font-weight: 500;
@@ -65,13 +96,13 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            color: #475569;
+            color: var(--control-text);
         }
 
         button:hover {
-            background: #f1f5f9;
-            border-color: #cbd5e1;
-            color: #1e293b;
+            background: var(--bg-color);
+            border-color: var(--border-color);
+            color: var(--text-color);
         }
 
         button.primary {
@@ -95,8 +126,9 @@
         #editor-wrapper {
             flex-grow: 1;
             position: relative;
-            background: #f1f5f9;
+            background: var(--editor-bg);
             overflow: hidden;
+            transition: background-color 0.3s;
         }
 
         gssk-editor {
@@ -108,10 +140,10 @@
         #rhs-panel {
             width: var(--side-panel-width);
             border-left: 1px solid var(--border-color);
-            background: white;
+            background: var(--panel-bg);
             display: flex;
             flex-direction: column;
-            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s, border-color 0.3s;
             position: relative;
             z-index: 20;
         }
@@ -134,7 +166,7 @@
         .panel-header {
             font-weight: 600;
             font-size: 0.75rem;
-            color: #64748b;
+            color: var(--panel-header-text);
             text-transform: uppercase;
             letter-spacing: 0.05em;
             margin-bottom: 16px;
@@ -146,23 +178,25 @@
         #simulation-chart {
             flex-grow: 1;
             min-height: 250px;
-            background: #f8fafc;
+            background: var(--bg-color);
             border: 1px solid var(--border-color);
             border-radius: 8px;
             margin-bottom: 16px;
             overflow: hidden;
+            transition: background-color 0.3s, border-color 0.3s;
         }
 
         #log-console {
             height: 200px;
-            background: #0f172a;
-            color: #e2e8f0;
+            background: var(--log-bg);
+            color: var(--log-text);
             font-family: 'JetBrains Mono', 'Fira Code', monospace;
             font-size: 0.75rem;
             padding: 12px;
             overflow-y: auto;
             border-radius: 8px;
-            border: 1px solid #1e293b;
+            border: 1px solid var(--border-color);
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
         }
 
         .log-entry {
@@ -184,7 +218,7 @@
             transform: translateY(-50%);
             width: 24px;
             height: 24px;
-            background: white;
+            background: var(--control-bg);
             border: 1px solid var(--border-color);
             border-radius: 50%;
             display: flex;
@@ -193,6 +227,7 @@
             cursor: pointer;
             z-index: 30;
             box-shadow: 0 2px 4px rgb(0 0 0 / 0.1);
+            color: var(--control-text);
         }
 
         .invalid-indicator {
@@ -215,15 +250,62 @@
             padding: 8px 12px;
             border-radius: 8px;
             border: 1px solid var(--border-color);
-            background: white;
+            background: var(--control-bg);
             font-size: 0.875rem;
-            color: #1e293b;
+            color: var(--text-color);
             outline: none;
+            transition: background-color 0.3s, border-color 0.3s, color 0.3s;
         }
 
         select:focus {
             border-color: var(--primary-color);
             ring: 2px solid var(--primary-color);
+        }
+
+        /* Theme Switcher Styles */
+        .theme-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
+        }
+
+        .theme-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e1;
+            transition: .4s;
+            border-radius: 22px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(18px);
         }
     </style>
 </head>
@@ -255,6 +337,15 @@
             <button id="export-json" title="Export to Console">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </button>
+            <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 8px;"></div>
+            <div class="theme-switch-wrapper" style="display: flex; align-items: center; gap: 8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #94a3b8"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                <label class="theme-switch">
+                    <input type="checkbox" id="theme-toggle">
+                    <span class="slider"></span>
+                </label>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #94a3b8"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            </div>
         </div>
     </header>
 
@@ -289,6 +380,30 @@
     <script type="module" src="/src/gssk-editor.js"></script>
     <script type="module">
         import createGSSK from 'gssk';
+
+        // Theme Toggle Logic
+        const themeToggle = document.getElementById('theme-toggle');
+        const currentTheme = localStorage.getItem('theme') || 'light';
+
+        if (currentTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            themeToggle.checked = true;
+            document.getElementById('editor').setAttribute('theme', 'dark');
+        }
+
+        themeToggle.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+                document.getElementById('editor').setAttribute('theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+                document.getElementById('editor').setAttribute('theme', 'light');
+            }
+            updateChart(); // Refresh chart colors
+        });
+
         import gsskUrl from 'gssk/dist/gssk.wasm?url';
 
         const editor = document.getElementById('editor');
@@ -560,15 +675,15 @@
                 const y = padding + i * (height - 2 * padding) / ticks;
                 const val = (maxY * (ticks - i) / ticks).toFixed(1);
                 html += `
-                    <line x1="${padding}" y1="${y}" x2="${width - padding}" y2="${y}" stroke="#f1f5f9" stroke-width="1" />
-                    <text x="${padding - 5}" y="${y + 3}" text-anchor="end" font-size="8" fill="#94a3b8">${val}</text>
+                    <line x1="${padding}" y1="${y}" x2="${width - padding}" y2="${y}" stroke="var(--chart-grid)" stroke-width="1" />
+                    <text x="${padding - 5}" y="${y + 3}" text-anchor="end" font-size="8" fill="var(--chart-tick)">${val}</text>
                 `;
             }
 
             html += `
-                <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="#cbd5e1" />
-                <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" stroke="#cbd5e1" />
-                <text x="${width/2}" y="${height - 5}" text-anchor="middle" font-size="10" fill="#64748b">Time (s)</text>
+                <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="var(--chart-axis)" />
+                <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" stroke="var(--chart-axis)" />
+                <text x="${width/2}" y="${height - 5}" text-anchor="middle" font-size="10" fill="var(--chart-tick)">Time (s)</text>
             `;
 
             const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];

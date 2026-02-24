@@ -13,6 +13,20 @@
   --panel-bg: rgba(255, 255, 255, 0.95);
   --panel-border: #e2e8f0;
   --selection-color: #3b82f6;
+  --edge-color: #475569;
+  --node-label-color: #475569;
+  --panel-header-color: #64748b;
+}
+
+:host([theme="dark"]) {
+  --bg-color: #020617;
+  --grid-color: #1e293b;
+  --text-color: #f1f5f9;
+  --panel-bg: rgba(30, 41, 59, 0.95);
+  --panel-border: #334155;
+  --edge-color: #94a3b8;
+  --node-label-color: #cbd5e1;
+  --panel-header-color: #94a3b8;
 }
 
 .editor-container {
@@ -62,7 +76,7 @@ svg {
   cursor: move;
   font-weight: 600;
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--panel-header-color);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border-bottom: 1px solid var(--panel-border);
@@ -93,7 +107,7 @@ svg {
   align-items: center;
   justify-content: center;
   cursor: grab;
-  background: white;
+  background: var(--panel-bg);
   transition: all 0.2s;
   font-weight: bold;
   color: var(--text-color);
@@ -137,13 +151,13 @@ svg {
 
 .node-label {
   font-size: 12px;
-  fill: #475569;
+  fill: var(--node-label-color);
   font-weight: 500;
   pointer-events: none;
 }
 
 .node-port {
-  fill: white;
+  fill: var(--panel-bg);
   stroke: var(--panel-border);
   stroke-width: 1px;
   opacity: 0;
@@ -185,6 +199,8 @@ input[type="text"], input[type="number"], select {
   border-radius: 6px;
   font-size: 0.85rem;
   box-sizing: border-box;
+  background: var(--panel-bg);
+  color: var(--text-color);
 }
 
 label {
