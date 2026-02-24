@@ -1,89 +1,165 @@
 import Ajv from 'ajv';
 
-const ajv = new Ajv();
+const ajv = new Ajv({ allErrors: true });
 
 const schema = {
-  type: 'object',
-  properties: {
-    settings: {
-      type: 'object',
-      properties: {
-        dt: { type: 'number' },
-        t_start: { type: 'number' },
-        t_end: { type: 'number' },
-        method: { type: 'string' }
-      }
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GSSK Model",
+  "description": "Schema for General Systems Simulation Kernel (GSSK) models.",
+  "type": "object",
+  "required": [
+    "nodes"
+  ],
+  "properties": {
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "value"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "storage",
+              "source",
+              "sink",
+              "constant"
+            ]
+          },
+          "value": {
+            "type": "number"
+          },
+          "currentValue": {
+            "type": "number"
+          },
+          "visual": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1
     },
-    nodes: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { type: 'string' },
-          type: { type: 'string', enum: ['source', 'storage', 'sink', 'constant'] },
-          value: { type: 'number' },
-          visual: {
-            type: 'object',
-            properties: {
-              x: { type: 'number' },
-              y: { type: 'number' },
-              label: { type: 'string' },
-              capacity: { type: 'number' },
-              symbol: { type: 'string' }
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "origin",
+          "target",
+          "logic",
+          "params"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "origin": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          },
+          "logic": {
+            "type": "string",
+            "enum": [
+              "constant",
+              "linear",
+              "interaction",
+              "limit",
+              "threshold"
+            ]
+          },
+          "params": {
+            "type": "object",
+            "required": [
+              "k"
+            ],
+            "properties": {
+              "k": {
+                "type": "number"
+              },
+              "control_node": {
+                "type": "string"
+              },
+              "threshold": {
+                "type": "number"
+              }
             },
-            required: ['x', 'y']
+            "additionalProperties": false
+          },
+          "visual": {
+            "type": "object",
+            "additionalProperties": true
           }
         },
-        required: ['id', 'type', 'visual']
+        "additionalProperties": false
       }
     },
-    edges: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { type: 'string' },
-          origin: { type: 'string' },
-          target: { type: 'string' },
-          logic: { type: 'string' },
-          params: { type: 'object' },
-          control_node: { type: 'string' },
-          visual: {
-            type: 'object',
-            properties: {
-              points: { type: 'array', items: { type: 'array', items: { type: 'number' }, minItems: 2, maxItems: 2 } },
-              max_flow: { type: 'number' }
-            }
-          }
+    "config": {
+      "type": "object",
+      "properties": {
+        "t_start": {
+          "type": "number",
+          "default": 0.0
         },
-        required: ['id', 'origin', 'target']
-      }
+        "t_end": {
+          "type": "number",
+          "default": 100.0
+        },
+        "dt": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 0.1
+        },
+        "method": {
+          "type": "string",
+          "enum": [
+            "euler",
+            "rk4"
+          ],
+          "default": "euler"
+        }
+      },
+      "additionalProperties": false
     },
-    boundaries: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          x: { type: 'number' },
-          y: { type: 'number' },
-          w: { type: 'number' },
-          h: { type: 'number' },
-          label: { type: 'string' }
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "boundaries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "x": { "type": "number" },
+          "y": { "type": "number" },
+          "w": { "type": "number" },
+          "h": { "type": "number" },
+          "label": { "type": "string" }
         },
-        required: ['x', 'y', 'w', 'h']
+        "required": ["x", "y", "w", "h"]
       }
     }
   },
-  required: ['nodes', 'edges']
+  "additionalProperties": false
 };
 
 const validate = ajv.compile(schema);
 
 export function validateModel(data) {
   const valid = validate(data);
-  if (!valid) {
-    console.error('Validation errors:', validate.errors);
-    return false;
-  }
-  return true;
+  return {
+    valid,
+    errors: validate.errors
+  };
 }

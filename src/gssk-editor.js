@@ -89,13 +89,14 @@ export class GsskEditor extends HTMLElement {
   }
 
   validate() {
-    const isValid = validateModel(this._value);
-    if (isValid) {
+    const result = validateModel(this._value);
+    if (result.valid) {
       this.removeAttribute('invalid');
     } else {
       this.setAttribute('invalid', '');
     }
-    return isValid;
+    this.dispatchEvent(new CustomEvent('validation', { detail: result }));
+    return result.valid;
   }
 
   getJson() {
@@ -349,7 +350,8 @@ export class GsskEditor extends HTMLElement {
       }
       g.appendChild(path);
 
-      if (edge.logic === 'interaction' || edge.control_node) {
+      const controlNodeId = edge.params?.control_node || edge.control_node;
+      if (edge.logic === 'interaction' || controlNodeId) {
         const midPoint = this.getPathMidpoint(edge);
         const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
         use.setAttribute('href', '#gate');
@@ -360,8 +362,8 @@ export class GsskEditor extends HTMLElement {
         use.setAttribute('color', 'var(--edge-color)');
         g.appendChild(use);
 
-        if (edge.control_node) {
-            const controlNode = this._value.nodes.find(n => n.id === edge.control_node);
+        if (controlNodeId) {
+            const controlNode = this._value.nodes.find(n => n.id === controlNodeId);
             if (controlNode) {
                 const controlLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                 controlLine.setAttribute('x1', controlNode.visual.x);
@@ -648,7 +650,9 @@ export class GsskEditor extends HTMLElement {
   setControlNode(controlId, edgeId) {
       const edge = this._value.edges.find(e => e.id === edgeId);
       if (edge) {
-          edge.control_node = controlId;
+          if (!edge.params) edge.params = {};
+          edge.params.control_node = controlId;
+          if (edge.control_node) delete edge.control_node;
           edge.logic = 'interaction';
           this.validate();
           this.update();
@@ -750,7 +754,12 @@ export class GsskEditor extends HTMLElement {
                     this._value.edges.forEach(edge => {
                         if (edge.origin === this._selectedId) edge.origin = val;
                         if (edge.target === this._selectedId) edge.target = val;
-                        if (edge.control_node === this._selectedId) edge.control_node = val;
+                        if (edge.params && edge.params.control_node === this._selectedId) edge.params.control_node = val;
+                        if (edge.control_node === this._selectedId) {
+                            if (!edge.params) edge.params = {};
+                            edge.params.control_node = val;
+                            delete edge.control_node;
+                        }
                     });
                     this._selectedId = val;
                 }
@@ -789,7 +798,7 @@ export class GsskEditor extends HTMLElement {
           </div>
           <div class="prop-group">
             <label>Control Node</label>
-            <input type="text" id="prop-edge-control" value="${edge.control_node || ''}">
+            <input type="text" id="prop-edge-control" value="${edge.params?.control_node || edge.control_node || ''}">
           </div>
           <button id="delete-edge" style="width:100%; margin-top:10px; color:red;">Delete Edge</button>
         `;
@@ -818,8 +827,10 @@ export class GsskEditor extends HTMLElement {
         });
 
         content.querySelector('#prop-edge-control').addEventListener('change', (e) => {
-            edge.control_node = e.target.value;
-            if (edge.control_node) edge.logic = 'interaction';
+            if (!edge.params) edge.params = { k: 0.1 };
+            edge.params.control_node = e.target.value;
+            if (edge.control_node) delete edge.control_node;
+            if (edge.params.control_node) edge.logic = 'interaction';
             this.validate();
             this.update();
             this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
