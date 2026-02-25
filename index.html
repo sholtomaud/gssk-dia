@@ -362,6 +362,7 @@
                     <option value="industrial">Industrial Ecosystem</option>
                     <option value="personal-finance">Personal Finance Model</option>
                     <option value="macro-economy">Macro-Economic Model</option>
+                    <option value="hydrology">Hydrology (Mock Real-time)</option>
                 </optgroup>
                 <optgroup label="My Models" id="user-models-group"></optgroup>
             </select>
@@ -385,6 +386,23 @@
             <button id="toggle-symbols">Odum Symbols</button>
             <button id="export-json" title="Export to Console">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </button>
+            <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 8px;"></div>
+            <button id="generate-article" title="Generate Scientific Article" style="position: relative;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                <span style="position: absolute; top: -5px; right: -5px; font-size: 10px;">✨</span>
+            </button>
+            <button id="open-library" title="Article Library">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
             </button>
             <button id="open-settings">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -434,6 +452,28 @@
                 <label>Time Step (dt)</label>
                 <input type="number" id="sim-dt" value="0.1" step="0.01">
             </div>
+            <div style="border-top: 1px solid var(--border-color); margin: 20px 0; padding-top: 20px;">
+                <label style="font-weight: 600; font-size: 0.75rem; text-transform: uppercase;">AI Integration</label>
+            </div>
+            <div class="prop-group">
+                <label>Gemini API Key</label>
+                <input type="password" id="gemini-api-key" placeholder="Enter API Key...">
+                <p style="font-size: 0.7rem; color: var(--panel-header-text); margin-top: 4px;">Stored locally in your browser.</p>
+            </div>
+            <div class="prop-group">
+                <label>Gemini Model</label>
+                <input type="text" id="gemini-model" value="gemini-3-flash-preview">
+            </div>
+        </div>
+    </div>
+
+    <div id="library-modal" class="side-panel">
+        <div class="panel-header">
+            Article Library
+            <button id="close-library" style="padding: 0; border: none; background: none; font-size: 1.5rem; color: var(--text-color); cursor: pointer;">&times;</button>
+        </div>
+        <div class="panel-content" id="library-content">
+            <p style="color: var(--panel-header-text); font-size: 0.875rem;">No articles generated yet.</p>
         </div>
     </div>
 
@@ -462,6 +502,10 @@
     <script type="module" src="/src/gssk-editor.js"></script>
     <script type="module">
         import createGSSK from 'gssk';
+        import { GoogleGenerativeAI } from "@google/generative-ai";
+        import { z } from "zod";
+        import { zodToJsonSchema } from "zod-to-json-schema";
+        import { jsPDF } from "jspdf";
 
         // Theme Toggle Logic
         const themeToggle = document.getElementById('theme-toggle');
@@ -507,8 +551,36 @@
         const simEndTimeInput = document.getElementById('sim-end-time');
         const simDtInput = document.getElementById('sim-dt');
 
+        const generateArticleBtn = document.getElementById('generate-article');
+        const openLibraryBtn = document.getElementById('open-library');
+        const closeLibraryBtn = document.getElementById('close-library');
+        const libraryModal = document.getElementById('library-modal');
+        const libraryContent = document.getElementById('library-content');
+        const geminiApiKeyInput = document.getElementById('gemini-api-key');
+        const geminiModelInput = document.getElementById('gemini-model');
+
+        // Load AI Settings
+        geminiApiKeyInput.value = localStorage.getItem('gssk_gemini_api_key') || '';
+        geminiModelInput.value = localStorage.getItem('gssk_gemini_model') || 'gemini-3-flash-preview';
+
+        geminiApiKeyInput.addEventListener('change', (e) => {
+            localStorage.setItem('gssk_gemini_api_key', e.target.value);
+            log('AI API Key updated.');
+        });
+
+        geminiModelInput.addEventListener('change', (e) => {
+            localStorage.setItem('gssk_gemini_model', e.target.value);
+            log('AI model updated.');
+        });
+
         openSettingsBtn.addEventListener('click', () => settingsPanel.classList.add('open'));
         closeSettingsBtn.addEventListener('click', () => settingsPanel.classList.remove('open'));
+
+        openLibraryBtn.addEventListener('click', () => {
+            libraryModal.classList.add('open');
+            updateLibraryList();
+        });
+        closeLibraryBtn.addEventListener('click', () => libraryModal.classList.remove('open'));
 
         function log(message, type = 'info') {
             const entry = document.createElement('div');
@@ -648,6 +720,18 @@
                     { id: 'hloss', origin: 'households', target: 'waste', logic: 'linear', params: { k: 0.02 }, visual: { points: [] } },
                     { id: 'gloss', origin: 'government', target: 'waste', logic: 'linear', params: { k: 0.01 }, visual: { points: [] } }
                 ]
+            },
+            'hydrology': {
+                config: { dt: 0.1, t_start: 0, t_end: 100, method: 'euler' },
+                nodes: [
+                    { id: 'rainfall', type: 'source', value: 0, visual: { x: 100, y: 150, label: 'Rainfall (mm/h)' } },
+                    { id: 'reservoir', type: 'storage', value: 50.0, visual: { x: 350, y: 150, label: 'River Level (m)', capacity: 100.0 } },
+                    { id: 'downstream', type: 'sink', value: 0, visual: { x: 600, y: 150, label: 'Downstream Flow' } }
+                ],
+                edges: [
+                    { id: 'runoff', origin: 'rainfall', target: 'reservoir', logic: 'linear', params: { k: 0.8 }, visual: { points: [] } },
+                    { id: 'outflow', origin: 'reservoir', target: 'downstream', logic: 'linear', params: { k: 0.2 }, visual: { points: [] } }
+                ]
             }
         };
 
@@ -696,11 +780,51 @@
         modelTitleInput.addEventListener('focus', () => modelTitleInput.style.border = '1px solid var(--border-color)');
         modelTitleInput.addEventListener('blur', () => modelTitleInput.style.border = '1px solid transparent');
 
+        let hydstraInterval = null;
+        async function fetchHydstraMock() {
+            if (exampleSelect.value !== 'hydrology') {
+                clearInterval(hydstraInterval);
+                hydstraInterval = null;
+                return;
+            }
+
+            log('Fetching real-time data from Hydstra (mock)...', 'info');
+            // Simulate network latency
+            await new Promise(r => setTimeout(r, 800));
+
+            const rain = (Math.random() * 5).toFixed(2);
+            const level = (30 + Math.random() * 40).toFixed(2);
+
+            const model = editor.getJson();
+            let changed = false;
+            model.nodes.forEach(n => {
+                if (n.id === 'rainfall') { n.value = parseFloat(rain); changed = true; }
+                if (n.id === 'reservoir') { n.value = parseFloat(level); changed = true; }
+            });
+
+            if (changed) {
+                editor.loadModel(model);
+                log(`Hydstra API Update: Rainfall=${rain}mm, RiverLevel=${level}m`, 'success');
+                // Auto-run if not simulating? No, let user decide when to run.
+            }
+        }
+
         exampleSelect.addEventListener('change', (e) => {
             const val = e.target.value;
             if (!val) return;
 
             stopSimulation();
+            if (hydstraInterval) {
+                clearInterval(hydstraInterval);
+                hydstraInterval = null;
+            }
+
+            if (val === 'hydrology') {
+                log('Hydrology mode: Real-time API updates enabled (5s polling mock).');
+                hydstraInterval = setInterval(fetchHydstraMock, 5000);
+                fetchHydstraMock();
+            }
+
             if (val.startsWith('user:')) {
                 const id = val.split(':')[1];
                 const savedModels = JSON.parse(localStorage.getItem('gssk_user_models') || '{}');
@@ -1095,6 +1219,59 @@
 
         window.addEventListener('resize', updateChart);
 
+        async function getChartImage() {
+            const originalSvg = document.getElementById('chart-svg');
+            const svg = originalSvg.cloneNode(true);
+            const width = originalSvg.clientWidth || 600;
+            const height = originalSvg.clientHeight || 400;
+
+            svg.setAttribute('width', width);
+            svg.setAttribute('height', height);
+
+            // Resolve CSS variables
+            const style = getComputedStyle(document.documentElement);
+            const bgColor = style.getPropertyValue('--bg-color').trim() || '#f8fafc';
+            const gridColor = style.getPropertyValue('--chart-grid').trim() || '#f1f5f9';
+            const tickColor = style.getPropertyValue('--chart-tick').trim() || '#94a3b8';
+            const axisColor = style.getPropertyValue('--chart-axis').trim() || '#cbd5e1';
+
+            // Apply styles directly to elements in the clone
+            svg.querySelectorAll('line').forEach(el => {
+                const stroke = el.getAttribute('stroke');
+                if (stroke === 'var(--chart-grid)') el.setAttribute('stroke', gridColor);
+                if (stroke === 'var(--chart-axis)') el.setAttribute('stroke', axisColor);
+            });
+            svg.querySelectorAll('text').forEach(el => {
+                const fill = el.getAttribute('fill');
+                if (fill === 'var(--chart-tick)') el.setAttribute('fill', tickColor);
+            });
+
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+
+            const img = new Image();
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+
+            return new Promise((resolve, reject) => {
+                img.onload = () => {
+                    ctx.fillStyle = bgColor;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                    URL.revokeObjectURL(url);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = (e) => {
+                    URL.revokeObjectURL(url);
+                    reject(e);
+                };
+                img.src = url;
+            });
+        }
+
         document.getElementById('toggle-symbols').addEventListener('click', () => {
             const current = editor.getAttribute('symbols');
             const next = current === 'odum' ? 'generic' : 'odum';
@@ -1106,6 +1283,305 @@
             const json = editor.getJson();
             console.log(JSON.stringify(json, null, 2));
             log('Model exported to console.');
+        });
+
+        // --- AI & Article Generation ---
+        const ArticleSchema = z.object({
+          title: z.string().describe("Professional academic title of the research paper."),
+          abstract: z.string().describe("A concise summary of the research, objective, and findings."),
+          introduction: z.string().describe("Background information and importance of the model."),
+          methodology: z.string().describe("Detailed description of the GSSK model structure and logic used."),
+          results_analysis: z.string().describe("Scientific analysis of the simulation results provided in context."),
+          conclusion: z.string().describe("Summary of findings and potential future work."),
+          keywords: z.array(z.string()).describe("List of 5 key terms.")
+        });
+
+        async function callGeminiForArticle() {
+            const apiKey = localStorage.getItem('gssk_gemini_api_key');
+            if (!apiKey) {
+                throw new Error('API Key missing. Please set it in Settings.');
+            }
+
+            const modelName = localStorage.getItem('gssk_gemini_model') || 'gemini-3-flash-preview';
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({ model: modelName });
+
+            const gsskModel = editor.getJson();
+            const lastData = chartData.length > 0 ? chartData[chartData.length - 1] : null;
+            const simulationSummary = lastData ?
+                `Simulation ran for ${chartData.length} steps. Final state at t=${lastData.time.toFixed(2)}: ${JSON.stringify(lastData)}` :
+                "No simulation data available.";
+
+            const prompt = `
+                You are a senior scientist. Generate a structured scientific article based on the following GSSK system model and simulation data.
+
+                MODEL JSON:
+                ${JSON.stringify(gsskModel, null, 2)}
+
+                SIMULATION RESULTS:
+                ${simulationSummary}
+
+                Requirements:
+                - Use professional academic language.
+                - Describe the interaction between nodes and edges.
+                - Analyze the stability or trends in the results.
+                - Keywords should be relevant to the domain (e.g., ecology, finance, hydrology).
+            `;
+
+            const result = await model.generateContent({
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseJsonSchema: zodToJsonSchema(ArticleSchema),
+                },
+            });
+
+            const text = result.response.text();
+            return ArticleSchema.parse(JSON.parse(text));
+        }
+
+        // --- IndexedDB Setup ---
+        const DB_NAME = 'GSSK_Library';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'articles';
+
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                    }
+                };
+                request.onsuccess = (e) => resolve(e.target.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function saveArticle(article) {
+            const db = await initDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.add(article);
+                request.onsuccess = () => resolve();
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function getArticles() {
+            const db = await initDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.getAll();
+                request.onsuccess = (e) => resolve(e.target.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function deleteArticle(id) {
+            const db = await initDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.delete(id);
+                request.onsuccess = () => resolve();
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function createAndSavePDF(data, diagramImg, chartImg) {
+            const doc = new jsPDF();
+            let y = 20;
+
+            doc.setFontSize(22);
+            doc.setFont("helvetica", "bold");
+            doc.text(data.title, 105, y, { align: "center" });
+            y += 15;
+
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "italic");
+            doc.text(`Keywords: ${data.keywords.join(", ")}`, 105, y, { align: "center" });
+            y += 10;
+
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("Abstract", 20, y);
+            y += 7;
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "normal");
+            const abstractLines = doc.splitTextToSize(data.abstract, 170);
+            doc.text(abstractLines, 20, y);
+            y += abstractLines.length * 5 + 10;
+
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("System Diagram", 20, y);
+            y += 5;
+            doc.addImage(diagramImg, 'PNG', 20, y, 170, 100);
+            y += 110;
+
+            if (y > 250) { doc.addPage(); y = 20; }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("1. Introduction", 20, y);
+            y += 7;
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "normal");
+            const introLines = doc.splitTextToSize(data.introduction, 170);
+            doc.text(introLines, 20, y);
+            y += introLines.length * 5 + 10;
+
+            if (y > 250) { doc.addPage(); y = 20; }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("2. Methodology", 20, y);
+            y += 7;
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "normal");
+            const methLines = doc.splitTextToSize(data.methodology, 170);
+            doc.text(methLines, 20, y);
+            y += methLines.length * 5 + 10;
+
+            if (chartImg) {
+                if (y > 180) { doc.addPage(); y = 20; }
+                doc.setFontSize(14);
+                doc.setFont("helvetica", "bold");
+                doc.text("3. Simulation Results", 20, y);
+                y += 5;
+                doc.addImage(chartImg, 'PNG', 20, y, 170, 80);
+                y += 90;
+            }
+
+            if (y > 250) { doc.addPage(); y = 20; }
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "normal");
+            const resultLines = doc.splitTextToSize(data.results_analysis, 170);
+            doc.text(resultLines, 20, y);
+            y += resultLines.length * 5 + 10;
+
+            if (y > 250) { doc.addPage(); y = 20; }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("4. Conclusion", 20, y);
+            y += 7;
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "normal");
+            const concLines = doc.splitTextToSize(data.conclusion, 170);
+            doc.text(concLines, 20, y);
+
+            const pdfBlob = doc.output('blob');
+            const reader = new FileReader();
+            return new Promise((resolve) => {
+                reader.onloadend = async () => {
+                    await saveArticle({
+                        title: data.title,
+                        date: new Date().toISOString(),
+                        pdf: reader.result
+                    });
+                    resolve();
+                };
+                reader.readAsDataURL(pdfBlob);
+            });
+        }
+
+        // --- Library Management ---
+        async function updateLibraryList() {
+            const articles = await getArticles();
+            if (articles.length === 0) {
+                libraryContent.innerHTML = '<p style="color: var(--panel-header-text); font-size: 0.875rem;">No articles generated yet.</p>';
+                return;
+            }
+
+            libraryContent.innerHTML = '';
+            articles.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(art => {
+                const item = document.createElement('div');
+                item.style.padding = '12px';
+                item.style.border = '1px solid var(--border-color)';
+                item.style.borderRadius = '8px';
+                item.style.marginBottom = '12px';
+                item.style.display = 'flex';
+                item.style.flexDirection = 'column';
+                item.style.gap = '8px';
+
+                const title = document.createElement('div');
+                title.style.fontWeight = '600';
+                title.style.fontSize = '0.9rem';
+                title.textContent = art.title;
+                item.appendChild(title);
+
+                const date = document.createElement('div');
+                date.style.fontSize = '0.7rem';
+                date.style.color = 'var(--panel-header-text)';
+                date.textContent = new Date(art.date).toLocaleString();
+                item.appendChild(date);
+
+                const actions = document.createElement('div');
+                actions.style.display = 'flex';
+                actions.style.gap = '8px';
+
+                const viewBtn = document.createElement('button');
+                viewBtn.textContent = 'Open PDF';
+                viewBtn.style.fontSize = '0.75rem';
+                viewBtn.addEventListener('click', () => {
+                    const win = window.open();
+                    win.document.write(`<iframe src="${art.pdf}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
+                });
+                actions.appendChild(viewBtn);
+
+                const delBtn = document.createElement('button');
+                delBtn.textContent = 'Delete';
+                delBtn.style.fontSize = '0.75rem';
+                delBtn.style.color = '#ef4444';
+                delBtn.addEventListener('click', async () => {
+                    if (confirm('Delete this article?')) {
+                        await deleteArticle(art.id);
+                        updateLibraryList();
+                    }
+                });
+                actions.appendChild(delBtn);
+
+                item.appendChild(actions);
+                libraryContent.appendChild(item);
+            });
+        }
+
+        generateArticleBtn.addEventListener('click', async () => {
+            if (generateArticleBtn.disabled) return;
+
+            try {
+                const apiKey = localStorage.getItem('gssk_gemini_api_key');
+                if (!apiKey) {
+                    alert('Please enter your Gemini API Key in Settings first.');
+                    settingsPanel.classList.add('open');
+                    return;
+                }
+
+                generateArticleBtn.disabled = true;
+                generateArticleBtn.style.opacity = '0.5';
+                log('Generating scientific article with Gemini AI...', 'info');
+
+                const articleData = await callGeminiForArticle();
+                log('AI Content generated successfully.', 'success');
+
+                log('Capturing model visuals...', 'info');
+                const diagramImg = await editor.getDiagramImage();
+                const chartImg = chartData.length > 0 ? await getChartImage() : null;
+
+                log('Assembling PDF...', 'info');
+                await createAndSavePDF(articleData, diagramImg, chartImg);
+
+                log('Article generation complete!', 'success');
+                updateLibraryList();
+            } catch (e) {
+                log('Article generation failed: ' + e.message, 'error');
+                console.error(e);
+            } finally {
+                generateArticleBtn.disabled = false;
+                generateArticleBtn.style.opacity = '1';
+            }
         });
     </script>
 </body>
