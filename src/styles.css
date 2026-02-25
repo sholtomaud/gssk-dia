@@ -134,19 +134,23 @@ svg {
   stroke-width: 2px;
 }
 
-.edge-group path {
+.edge-group .main-path {
   transition: stroke 0.2s, stroke-width 0.2s;
   cursor: pointer;
 }
 
-.edge-group:hover path {
+.edge-group:hover .main-path {
   stroke: var(--primary-color);
   stroke-width: 3px;
 }
 
-.edge-group.selected path {
+.edge-group.selected .main-path {
   stroke: var(--selection-color);
   stroke-width: 4px;
+}
+
+.edge-group .hit-path {
+  cursor: pointer;
 }
 
 .node-label {

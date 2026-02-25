@@ -370,7 +370,7 @@ export class GsskEditor extends HTMLElement {
         marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
         marker.setAttribute('id', 'arrowhead');
         marker.setAttribute('viewBox', '0 0 10 10');
-        marker.setAttribute('refX', '10');
+        marker.setAttribute('refX', '9');
         marker.setAttribute('refY', '5');
         marker.setAttribute('markerWidth', '6');
         marker.setAttribute('markerHeight', '6');
@@ -388,15 +388,25 @@ export class GsskEditor extends HTMLElement {
       g.setAttribute('class', `edge-group ${this._selectedId === edge.id ? 'selected' : ''}`);
 
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       const geo = this.getEdgeGeometry(edge);
       if (!geo) return;
 
       const d = `M ${geo.x1},${geo.y1} C ${geo.cx1},${geo.cy1} ${geo.cx2},${geo.cy2} ${geo.x2},${geo.y2}`;
+
+      hitPath.setAttribute('d', d);
+      hitPath.setAttribute('fill', 'none');
+      hitPath.setAttribute('stroke', 'transparent');
+      hitPath.setAttribute('stroke-width', '20');
+      hitPath.setAttribute('class', 'hit-path');
+      g.appendChild(hitPath);
+
       path.setAttribute('d', d);
       path.setAttribute('fill', 'none');
       path.setAttribute('stroke', 'var(--edge-color)');
       path.setAttribute('stroke-width', '2');
       path.setAttribute('marker-end', 'url(#arrowhead)');
+      path.setAttribute('class', 'main-path');
 
       if (edge.logic === 'interaction') {
         path.setAttribute('stroke-dasharray', '5,5');
@@ -467,39 +477,146 @@ export class GsskEditor extends HTMLElement {
     });
   }
 
+  intersectRect(angle, w, h) {
+    const absCos = Math.abs(Math.cos(angle));
+    const absSin = Math.abs(Math.sin(angle));
+    if (w * absSin <= h * absCos) {
+      const x = Math.sign(Math.cos(angle)) * w / 2;
+      const y = x * Math.tan(angle);
+      return { x, y };
+    } else {
+      const y = Math.sign(Math.sin(angle)) * h / 2;
+      const x = y / Math.tan(angle);
+      return { x, y };
+    }
+  }
+
+  intersectEllipse(angle, rx, ry) {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    const r = (rx * ry) / Math.sqrt((ry * cos) ** 2 + (rx * sin) ** 2);
+    return { x: r * cos, y: r * sin };
+  }
+
+  intersectDiamond(angle, size) {
+    // A diamond is just a rectangle rotated by 45 degrees.
+    // Or we can treat it as 4 lines: |x| + |y| = size/2
+    // But our diamond is a square 50x50 rotated, so its side in axis-aligned is different.
+    // The vertices are (size/2, 0), (0, size/2), (-size/2, 0), (0, -size/2)
+    const absCos = Math.abs(Math.cos(angle));
+    const absSin = Math.abs(Math.sin(angle));
+    const r = (size / 2) / (absCos + absSin);
+    return { x: r * Math.cos(angle), y: r * Math.sin(angle) };
+  }
+
+  getNodeBoundaryPoint(node, controlPoint) {
+    const cx = node.visual.x;
+    const cy = node.visual.y;
+    const dx = controlPoint.x - cx;
+    const dy = controlPoint.y - cy;
+    const angle = Math.atan2(dy, dx);
+
+    let localPoint = { x: 0, y: 0 };
+    const symbols = this._symbols || 'odum';
+
+    if (symbols === 'odum') {
+      switch (node.type) {
+        case 'storage':
+          localPoint = this.intersectRect(angle, 48, 48); // 60 * 0.8
+          break;
+        case 'source':
+          // Cloud approximation: ellipse 70x40 in 100x100 -> 56x32 in editor
+          localPoint = this.intersectEllipse(angle, 28, 16);
+          break;
+        case 'sink':
+          // Sink input is at the top of the vertical line: (50, 20) in 100x100 -> (0, -24) relative
+          localPoint = { x: 0, y: -24 };
+          break;
+        case 'constant':
+          // Diamond is a square rotated 45 degrees. Diagonal is 50*sqrt(2) = 70.7 in 100x100
+          // Scaled by 0.8 -> diagonal is 56.56
+          localPoint = this.intersectDiamond(angle, 56.56);
+          break;
+        default:
+          localPoint = this.intersectEllipse(angle, 24, 24);
+      }
+    } else {
+      // Generic symbols
+      switch (node.type) {
+        case 'source':
+          localPoint = this.intersectEllipse(angle, 24, 24); // Radius 30 * 0.8 = 24
+          break;
+        case 'storage':
+          localPoint = this.intersectRect(angle, 40, 40); // 50 * 0.8 = 40
+          break;
+        case 'sink':
+          // Generic sink is a right-pointing arrow. Input at (20, 50) -> (-24, 0)
+          localPoint = { x: -24, y: 0 };
+          break;
+        case 'constant':
+          // Diagonal of 50x50 square is 70.7. Scaled by 0.8 -> 56.56
+          localPoint = this.intersectDiamond(angle, 56.56);
+          break;
+        default:
+          localPoint = this.intersectEllipse(angle, 24, 24);
+      }
+    }
+    return { x: cx + localPoint.x, y: cy + localPoint.y };
+  }
+
   getEdgeGeometry(edge) {
       const originNode = this._value.nodes.find(n => n.id === edge.origin);
       const targetNode = this._value.nodes.find(n => n.id === edge.target);
       if (!originNode || !targetNode) return null;
 
-      const dx = targetNode.visual.x - originNode.visual.x;
-      const dy = targetNode.visual.y - originNode.visual.y;
-      const angle = Math.atan2(dy, dx);
-      const offset = 40;
+      // Initial centers
+      const c1 = { x: originNode.visual.x, y: originNode.visual.y };
+      const c2 = { x: targetNode.visual.x, y: targetNode.visual.y };
 
-      const x1 = originNode.visual.x + Math.cos(angle) * offset;
-      const y1 = originNode.visual.y + Math.sin(angle) * offset;
-      const x2 = targetNode.visual.x - Math.cos(angle) * (offset + 5);
-      const y2 = targetNode.visual.y - Math.sin(angle) * (offset + 5);
-
-      const dist = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-
+      // Determine control points
       let cx1, cy1, cx2, cy2;
+      const dx = c2.x - c1.x;
+      const dy = c2.y - c1.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx);
 
       if (edge.visual && edge.visual.ctrl1) {
-          cx1 = x1 + edge.visual.ctrl1.x;
-          cy1 = y1 + edge.visual.ctrl1.y;
+          // Stored offsets are relative to the endpoints.
+          // For initial calculation of intersections, we use them relative to centers
+          // OR we use the old logic.
+          // Let's assume they are relative to the centers for the sake of finding the intersection ray.
+          cx1 = c1.x + edge.visual.ctrl1.x;
+          cy1 = c1.y + edge.visual.ctrl1.y;
       } else {
-          cx1 = x1 + Math.cos(angle - 0.2) * dist / 3;
-          cy1 = y1 + Math.sin(angle - 0.2) * dist / 3;
+          cx1 = c1.x + Math.cos(angle - 0.2) * dist / 3;
+          cy1 = c1.y + Math.sin(angle - 0.2) * dist / 3;
       }
 
       if (edge.visual && edge.visual.ctrl2) {
+          cx2 = c2.x + edge.visual.ctrl2.x;
+          cy2 = c2.y + edge.visual.ctrl2.y;
+      } else {
+          cx2 = c2.x - Math.cos(angle + 0.2) * dist / 3;
+          cy2 = c2.y - Math.sin(angle + 0.2) * dist / 3;
+      }
+
+      // Find intersection points
+      const p1 = this.getNodeBoundaryPoint(originNode, { x: cx1, y: cy1 });
+      const p2 = this.getNodeBoundaryPoint(targetNode, { x: cx2, y: cy2 });
+
+      const x1 = p1.x;
+      const y1 = p1.y;
+      const x2 = p2.x;
+      const y2 = p2.y;
+
+      // Re-adjust control points to be relative to the new endpoints if they were stored
+      if (edge.visual && edge.visual.ctrl1) {
+          cx1 = x1 + edge.visual.ctrl1.x;
+          cy1 = y1 + edge.visual.ctrl1.y;
+      }
+      if (edge.visual && edge.visual.ctrl2) {
           cx2 = x2 + edge.visual.ctrl2.x;
           cy2 = y2 + edge.visual.ctrl2.y;
-      } else {
-          cx2 = x2 - Math.cos(angle + 0.2) * dist / 3;
-          cy2 = y2 - Math.sin(angle + 0.2) * dist / 3;
       }
 
       return { x1, y1, cx1, cy1, cx2, cy2, x2, y2 };
