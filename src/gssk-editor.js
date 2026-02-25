@@ -26,6 +26,7 @@ export class GsskEditor extends HTMLElement {
     this._onWheel = this.onWheel.bind(this);
     this._onDrop = this.onDrop.bind(this);
     this._onDoubleClick = this.onDoubleClick.bind(this);
+    this._onKeyDown = this.onKeyDown.bind(this);
   }
 
   static get observedAttributes() {
@@ -34,11 +35,13 @@ export class GsskEditor extends HTMLElement {
 
   connectedCallback() {
     this.render();
+    window.addEventListener('keydown', this._onKeyDown);
   }
 
   disconnectedCallback() {
       window.removeEventListener('mousemove', this._onMouseMove);
       window.removeEventListener('mouseup', this._onMouseUp);
+      window.removeEventListener('keydown', this._onKeyDown);
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -77,8 +80,16 @@ export class GsskEditor extends HTMLElement {
 
   loadModel(json) {
     this._value = JSON.parse(JSON.stringify(json));
+    if (!this._value.nodes) this._value.nodes = [];
+    if (!this._value.edges) this._value.edges = [];
+    if (!this._value.boundaries) this._value.boundaries = [];
+
     this._value.nodes.forEach(node => {
         node.currentValue = node.value;
+    });
+    // Ensure boundaries have IDs
+    this._value.boundaries.forEach((b, i) => {
+        if (!b.id) b.id = `boundary-${i}-${Date.now()}`;
     });
     this.validate();
     this.update();
@@ -160,6 +171,7 @@ export class GsskEditor extends HTMLElement {
           <div class="palette-item" draggable="true" data-type="storage" title="Storage">Sto</div>
           <div class="palette-item" draggable="true" data-type="sink" title="Sink">Snk</div>
           <div class="palette-item" draggable="true" data-type="constant" title="Constant">Con</div>
+          <div class="palette-item" draggable="true" data-type="boundary" title="System Boundary">Bnd</div>
         </div>
         <div id="canvas-container">
           <svg id="svg-canvas" viewBox="${this._viewBox.x} ${this._viewBox.y} ${this._viewBox.w} ${this._viewBox.h}">
@@ -192,9 +204,10 @@ export class GsskEditor extends HTMLElement {
     if (defs) {
       defs.innerHTML = SYMBOLS.odum + SYMBOLS.generic;
     }
+    // Render boundaries first so they are at the bottom of the z-stack
     this.renderBoundaries();
-    this.renderNodes();
     this.renderEdges();
+    this.renderNodes();
   }
 
   renderBoundaries() {
@@ -204,6 +217,10 @@ export class GsskEditor extends HTMLElement {
     if (!this._value.boundaries) return;
 
     this._value.boundaries.forEach(boundary => {
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.setAttribute('data-id', boundary.id);
+      g.setAttribute('class', `boundary-group ${this._selectedId === boundary.id ? 'selected' : ''}`);
+
       const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       rect.setAttribute('x', boundary.x);
       rect.setAttribute('y', boundary.y);
@@ -211,11 +228,12 @@ export class GsskEditor extends HTMLElement {
       rect.setAttribute('height', boundary.h);
       rect.setAttribute('rx', '15');
       rect.setAttribute('ry', '15');
-      rect.setAttribute('fill', 'none');
-      rect.setAttribute('stroke', 'var(--grid-color)');
+      rect.setAttribute('fill', 'rgba(100, 116, 139, 0.05)');
+      rect.setAttribute('stroke', this._selectedId === boundary.id ? 'var(--primary-color)' : 'var(--grid-color)');
       rect.setAttribute('stroke-width', '2');
       rect.setAttribute('stroke-dasharray', '5,5');
-      layer.appendChild(rect);
+      rect.style.cursor = 'grab';
+      g.appendChild(rect);
 
       if (boundary.label) {
           const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -223,9 +241,24 @@ export class GsskEditor extends HTMLElement {
           text.setAttribute('y', boundary.y + 20);
           text.setAttribute('class', 'node-label');
           text.style.fontStyle = 'italic';
+          text.style.pointerEvents = 'none';
           text.textContent = boundary.label;
-          layer.appendChild(text);
+          g.appendChild(text);
       }
+
+      if (this._selectedId === boundary.id && !this._readOnly) {
+          const handle = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          handle.setAttribute('x', boundary.x + boundary.w - 10);
+          handle.setAttribute('y', boundary.y + boundary.h - 10);
+          handle.setAttribute('width', '20');
+          handle.setAttribute('height', '20');
+          handle.setAttribute('fill', 'var(--primary-color)');
+          handle.setAttribute('class', 'resize-handle');
+          handle.style.cursor = 'nwse-resize';
+          g.appendChild(handle);
+      }
+
+      layer.appendChild(g);
     });
   }
 
@@ -294,13 +327,28 @@ export class GsskEditor extends HTMLElement {
           { x: 10, y: 40, pos: 'left' }
       ];
       ports.forEach(p => {
-          const port = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-          port.setAttribute('cx', p.x);
-          port.setAttribute('cy', p.y);
-          port.setAttribute('r', '5');
-          port.setAttribute('class', 'node-port');
-          port.setAttribute('data-pos', p.pos);
-          g.appendChild(port);
+          const portG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          portG.setAttribute('class', 'node-port');
+          portG.setAttribute('data-pos', p.pos);
+
+          const portVisible = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          portVisible.setAttribute('cx', p.x);
+          portVisible.setAttribute('cy', p.y);
+          portVisible.setAttribute('r', '4');
+          portVisible.setAttribute('fill', 'var(--bg-color)');
+          portVisible.setAttribute('stroke', 'var(--primary-color)');
+          portVisible.setAttribute('stroke-width', '1');
+          portG.appendChild(portVisible);
+
+          const portHit = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          portHit.setAttribute('cx', p.x);
+          portHit.setAttribute('cy', p.y);
+          portHit.setAttribute('r', '12');
+          portHit.setAttribute('fill', 'transparent');
+          portHit.style.cursor = 'crosshair';
+          portG.appendChild(portHit);
+
+          g.appendChild(portG);
       });
 
       layer.appendChild(g);
@@ -502,18 +550,22 @@ export class GsskEditor extends HTMLElement {
         return;
     }
 
-    const target = e.target.closest('.node-group');
+    const resizeHandle = e.target.closest('.resize-handle');
+    if (resizeHandle) {
+        this._isResizing = true;
+        this._selectedId = resizeHandle.parentElement.dataset.id;
+        this._selectedType = 'boundary';
+        return;
+    }
+
+    const nodeTarget = e.target.closest('.node-group');
     const edgeTarget = e.target.closest('.edge-group');
+    const boundaryTarget = e.target.closest('.boundary-group');
 
-    if (target) {
+    if (nodeTarget) {
       this._isDragging = true;
-      this._draggedElement = target;
-      this._selectedId = target.dataset.id;
+      this._selectedId = nodeTarget.dataset.id;
       this._selectedType = 'node';
-      this.dispatchEvent(new CustomEvent('node-select', { detail: this._value.nodes.find(n => n.id === this._selectedId) }));
-      this.showPropertyPanel();
-      this.renderNodes(); // update selection visual
-
       this._dragOffset = {
           x: svgP.x - this._value.nodes.find(n => n.id === this._selectedId).visual.x,
           y: svgP.y - this._value.nodes.find(n => n.id === this._selectedId).visual.y
@@ -521,18 +573,25 @@ export class GsskEditor extends HTMLElement {
     } else if (edgeTarget) {
         this._selectedId = edgeTarget.dataset.id;
         this._selectedType = 'edge';
-        this.showPropertyPanel();
-        this.renderNodes(); // to clear node selection
+    } else if (boundaryTarget) {
+        this._isDragging = true;
+        this._selectedId = boundaryTarget.dataset.id;
+        this._selectedType = 'boundary';
+        const b = this._value.boundaries.find(b => b.id === this._selectedId);
+        this._dragOffset = { x: svgP.x - b.x, y: svgP.y - b.y };
     } else {
         this._selectedId = null;
         this._selectedType = null;
-        this.renderNodes();
-        this.shadowRoot.getElementById('property-panel').classList.add('hidden');
-
-        // Start panning
         this._isPanning = true;
         this._lastMousePos = { x: e.clientX, y: e.clientY };
     }
+
+    if (this._selectedId) {
+        this.showPropertyPanel();
+    } else {
+        this.shadowRoot.getElementById('property-panel').classList.add('hidden');
+    }
+    this.update();
   }
 
   onMouseMove(e) {
@@ -547,6 +606,17 @@ export class GsskEditor extends HTMLElement {
         return;
     }
 
+    if (this._isResizing) {
+        const b = this._value.boundaries.find(b => b.id === this._selectedId);
+        if (b) {
+            b.w = Math.max(50, Math.round((svgP.x - b.x) / this._gridSize) * this._gridSize);
+            b.h = Math.max(50, Math.round((svgP.y - b.y) / this._gridSize) * this._gridSize);
+            this.update();
+            this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
+        }
+        return;
+    }
+
     if (this._isPanning) {
         const dx = (e.clientX - this._lastMousePos.x) * this._zoom;
         const dy = (e.clientY - this._lastMousePos.y) * this._zoom;
@@ -557,20 +627,30 @@ export class GsskEditor extends HTMLElement {
         return;
     }
 
-    if (!this._isDragging || !this._draggedElement) return;
+    if (!this._isDragging) return;
+
     let x = svgP.x - this._dragOffset.x;
     let y = svgP.y - this._dragOffset.y;
-
     x = Math.round(x / this._gridSize) * this._gridSize;
     y = Math.round(y / this._gridSize) * this._gridSize;
 
-    const node = this._value.nodes.find(n => n.id === this._selectedId);
-    if (node) {
-      node.visual.x = x;
-      node.visual.y = y;
-      this.update();
-      this.validate();
-      this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
+    if (this._selectedType === 'node') {
+        const node = this._value.nodes.find(n => n.id === this._selectedId);
+        if (node) {
+            node.visual.x = x;
+            node.visual.y = y;
+            this.update();
+            this.validate();
+            this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
+        }
+    } else if (this._selectedType === 'boundary') {
+        const b = this._value.boundaries.find(b => b.id === this._selectedId);
+        if (b) {
+            b.x = x;
+            b.y = y;
+            this.update();
+            this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
+        }
     }
   }
 
@@ -581,17 +661,16 @@ export class GsskEditor extends HTMLElement {
         if (tempWire) tempWire.remove();
 
         const targetNode = e.target.closest('.node-group');
-        const targetEdge = e.target.closest('g[data-id] > path');
+        const targetEdge = e.target.closest('.edge-group');
 
         if (targetNode && targetNode.dataset.id !== this._wireStartNodeId) {
             this.createEdge(this._wireStartNodeId, targetNode.dataset.id);
-        } else if (targetEdge) {
-            const edgeId = targetEdge.parentElement.dataset.id;
-            this.setControlNode(this._wireStartNodeId, edgeId);
+        } else if (targetEdge && targetEdge.dataset.id) {
+            this.setControlNode(this._wireStartNodeId, targetEdge.dataset.id);
         }
     }
     this._isDragging = false;
-    this._draggedElement = null;
+    this._isResizing = false;
     this._isPanning = false;
   }
 
@@ -622,9 +701,10 @@ export class GsskEditor extends HTMLElement {
       line.setAttribute('y1', this._wireStartPos.y);
       line.setAttribute('x2', this._wireStartPos.x);
       line.setAttribute('y2', this._wireStartPos.y);
-      line.setAttribute('stroke', '#3b82f6');
+      line.setAttribute('stroke', 'var(--primary-color)');
       line.setAttribute('stroke-width', '2');
       line.setAttribute('stroke-dasharray', '5,5');
+      line.style.pointerEvents = 'none';
       svg.appendChild(line);
   }
 
@@ -669,15 +749,22 @@ export class GsskEditor extends HTMLElement {
     const x = Math.round(svgP.x / this._gridSize) * this._gridSize;
     const y = Math.round(svgP.y / this._gridSize) * this._gridSize;
 
-    const id = `${type}-${Date.now()}`;
-    const newNode = {
-      id,
-      type,
-      value: type === 'storage' ? 10 : 0,
-      visual: { x, y, label: type.charAt(0).toUpperCase() + type.slice(1), capacity: 100 }
-    };
+    if (type === 'boundary') {
+        const id = `boundary-${Date.now()}`;
+        this._value.boundaries.push({
+            id, x, y, w: 200, h: 200, label: 'System Boundary'
+        });
+    } else {
+        const id = `${type}-${Date.now()}`;
+        const newNode = {
+            id,
+            type,
+            value: type === 'storage' ? 10 : 0,
+            visual: { x, y, label: type.charAt(0).toUpperCase() + type.slice(1), capacity: 100 }
+        };
+        this._value.nodes.push(newNode);
+    }
 
-    this._value.nodes.push(newNode);
     this.validate();
     this.update();
     this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
@@ -686,12 +773,40 @@ export class GsskEditor extends HTMLElement {
   onDoubleClick(e) {
       const target = e.target.closest('.node-label');
       if (target) {
-          const nodeId = target.parentElement.dataset.id;
-          const node = this._value.nodes.find(n => n.id === nodeId);
-          const newLabel = prompt('Enter new label:', node.visual.label);
+          const parent = target.parentElement;
+          const id = parent.dataset.id;
+          let item = this._value.nodes.find(n => n.id === id) || this._value.boundaries.find(b => b.id === id);
+          if (!item) return;
+
+          const currentLabel = item.visual ? item.visual.label : item.label;
+          const newLabel = prompt('Enter new label:', currentLabel);
           if (newLabel !== null) {
-              node.visual.label = newLabel;
+              if (item.visual) item.visual.label = newLabel;
+              else item.label = newLabel;
               this.update();
+              this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
+          }
+      }
+  }
+
+  onKeyDown(e) {
+      if (this._readOnly) return;
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+          if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+          if (this._selectedId) {
+              if (this._selectedType === 'node') {
+                  this._value.nodes = this._value.nodes.filter(n => n.id !== this._selectedId);
+                  this._value.edges = this._value.edges.filter(edge => edge.origin !== this._selectedId && edge.target !== this._selectedId);
+              } else if (this._selectedType === 'edge') {
+                  this._value.edges = this._value.edges.filter(edge => edge.id !== this._selectedId);
+              } else if (this._selectedType === 'boundary') {
+                  this._value.boundaries = this._value.boundaries.filter(b => b.id !== this._selectedId);
+              }
+              this._selectedId = null;
+              this._selectedType = null;
+              this.shadowRoot.getElementById('property-panel').classList.add('hidden');
+              this.update();
+              this.validate();
               this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
           }
       }
@@ -709,36 +824,47 @@ export class GsskEditor extends HTMLElement {
         content.innerHTML = `
           <div class="prop-group">
             <label>ID</label>
-            <input type="text" id="prop-id" value="${node.id}">
+            <input type="text" id="prop-id">
           </div>
           <div class="prop-group">
             <label>Label</label>
-            <input type="text" id="prop-label" value="${node.visual.label || ''}">
+            <input type="text" id="prop-label">
           </div>
           <div class="prop-group">
             <label>Initial Value</label>
-            <input type="number" id="prop-value" step="0.1" value="${node.value}">
+            <input type="number" id="prop-value" step="0.1">
           </div>
           <div class="prop-group">
             <label>Current Value</label>
-            <input type="number" id="prop-current-value" step="0.1" value="${(node.currentValue !== undefined ? node.currentValue : node.value).toFixed(2)}" readonly>
+            <input type="number" id="prop-current-value" step="0.1" readonly>
           </div>
-          ${node.type === 'storage' ? `
-          <div class="prop-group">
-            <label>Capacity</label>
-            <input type="number" id="prop-capacity" value="${node.visual.capacity || 100}">
-          </div>
-          ` : ''}
+          <div id="storage-props"></div>
           <div class="prop-group">
             <label>Type</label>
             <select id="prop-type">
-                <option value="source" ${node.type === 'source' ? 'selected' : ''}>Source</option>
-                <option value="storage" ${node.type === 'storage' ? 'selected' : ''}>Storage</option>
-                <option value="sink" ${node.type === 'sink' ? 'selected' : ''}>Sink</option>
-                <option value="constant" ${node.type === 'constant' ? 'selected' : ''}>Constant</option>
+                <option value="source">Source</option>
+                <option value="storage">Storage</option>
+                <option value="sink">Sink</option>
+                <option value="constant">Constant</option>
             </select>
           </div>
         `;
+        content.querySelector('#prop-id').value = node.id;
+        content.querySelector('#prop-label').value = node.visual.label || '';
+        content.querySelector('#prop-value').value = node.value;
+        content.querySelector('#prop-current-value').value = (node.currentValue !== undefined ? node.currentValue : node.value).toFixed(2);
+        content.querySelector('#prop-type').value = node.type;
+
+        if (node.type === 'storage') {
+            const storageProps = content.querySelector('#storage-props');
+            storageProps.innerHTML = `
+              <div class="prop-group">
+                <label>Capacity</label>
+                <input type="number" id="prop-capacity">
+              </div>
+            `;
+            storageProps.querySelector('#prop-capacity').value = node.visual.capacity || 100;
+        }
 
         const updateProp = (id, field, isVisual = false) => {
             content.querySelector(id).addEventListener('change', (e) => {
@@ -775,6 +901,36 @@ export class GsskEditor extends HTMLElement {
         updateProp('#prop-value', 'value');
         if (node.type === 'storage') updateProp('#prop-capacity', 'capacity', true);
         updateProp('#prop-type', 'type');
+    } else if (this._selectedType === 'boundary') {
+        const boundary = this._value.boundaries.find(b => b.id === this._selectedId);
+        if (!boundary) return;
+
+        panel.classList.remove('hidden');
+        content.innerHTML = `
+          <div class="prop-group">
+            <label>ID</label>
+            <input type="text" id="prop-b-id">
+          </div>
+          <div class="prop-group">
+            <label>Label</label>
+            <input type="text" id="prop-b-label">
+          </div>
+        `;
+        content.querySelector('#prop-b-id').value = boundary.id;
+        content.querySelector('#prop-b-label').value = boundary.label || '';
+
+        content.querySelector('#prop-b-id').addEventListener('change', (e) => {
+            boundary.id = e.target.value;
+            this._selectedId = boundary.id;
+            this.update();
+            this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
+        });
+
+        content.querySelector('#prop-b-label').addEventListener('change', (e) => {
+            boundary.label = e.target.value;
+            this.update();
+            this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
+        });
     } else if (this._selectedType === 'edge') {
         const edge = this._value.edges.find(e => e.id === this._selectedId);
         if (!edge) return;
@@ -783,25 +939,29 @@ export class GsskEditor extends HTMLElement {
         content.innerHTML = `
           <div class="prop-group">
             <label>ID</label>
-            <input type="text" id="prop-edge-id" value="${edge.id}">
+            <input type="text" id="prop-edge-id">
           </div>
           <div class="prop-group">
             <label>Logic</label>
             <select id="prop-edge-logic">
-                <option value="linear" ${edge.logic === 'linear' ? 'selected' : ''}>Linear</option>
-                <option value="interaction" ${edge.logic === 'interaction' ? 'selected' : ''}>Interaction</option>
+                <option value="linear">Linear</option>
+                <option value="interaction">Interaction</option>
             </select>
           </div>
           <div class="prop-group">
             <label>Parameter (k)</label>
-            <input type="number" id="prop-edge-k" step="0.001" value="${edge.params?.k || 0.1}">
+            <input type="number" id="prop-edge-k" step="0.001">
           </div>
           <div class="prop-group">
             <label>Control Node</label>
-            <input type="text" id="prop-edge-control" value="${edge.params?.control_node || edge.control_node || ''}">
+            <input type="text" id="prop-edge-control">
           </div>
           <button id="delete-edge" style="width:100%; margin-top:10px; color:red;">Delete Edge</button>
         `;
+        content.querySelector('#prop-edge-id').value = edge.id;
+        content.querySelector('#prop-edge-logic').value = edge.logic;
+        content.querySelector('#prop-edge-k').value = edge.params?.k || 0.1;
+        content.querySelector('#prop-edge-control').value = edge.params?.control_node || edge.control_node || '';
 
         content.querySelector('#prop-edge-id').addEventListener('change', (e) => {
             edge.id = e.target.value;
