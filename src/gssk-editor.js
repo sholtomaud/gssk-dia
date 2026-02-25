@@ -660,8 +660,10 @@ export class GsskEditor extends HTMLElement {
         const tempWire = this.shadowRoot.getElementById('temp-wire');
         if (tempWire) tempWire.remove();
 
-        const targetNode = e.target.closest('.node-group');
-        const targetEdge = e.target.closest('.edge-group');
+        const path = e.composedPath();
+        const target = path[0];
+        const targetNode = (target instanceof Element) ? target.closest('.node-group') : null;
+        const targetEdge = (target instanceof Element) ? target.closest('.edge-group') : null;
 
         if (targetNode && targetNode.dataset.id !== this._wireStartNodeId) {
             this.createEdge(this._wireStartNodeId, targetNode.dataset.id);
@@ -792,7 +794,8 @@ export class GsskEditor extends HTMLElement {
   onKeyDown(e) {
       if (this._readOnly) return;
       if (e.key === 'Delete' || e.key === 'Backspace') {
-          if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+          const target = e.composedPath()[0];
+          if (target && (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA')) return;
           if (this._selectedId) {
               if (this._selectedType === 'node') {
                   this._value.nodes = this._value.nodes.filter(n => n.id !== this._selectedId);
