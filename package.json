@@ -10,7 +10,7 @@
     "test": "playwright test"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
+    "@google/genai": "^1.42.0",
     "ajv": "^8.12.0",
     "gssk": "github:sholtomaud/GSSK#dist",
     "jspdf": "^4.2.0",
