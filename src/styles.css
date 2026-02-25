@@ -175,6 +175,25 @@ svg {
   r: 6;
 }
 
+.handle-line {
+  stroke: var(--primary-color);
+  stroke-width: 1;
+  stroke-dasharray: 2,2;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.control-handle {
+  fill: var(--bg-color);
+  stroke: var(--primary-color);
+  stroke-width: 2;
+  cursor: grab;
+}
+
+.control-handle:hover {
+  fill: var(--primary-color);
+}
+
 .hidden {
   display: none !important;
 }

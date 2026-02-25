@@ -50,6 +50,8 @@ The editor uses the standard GSSK JSON format but adds a `visual` property to no
 }
 ```
 - `points`: Array of `[x, y]` waypoints for the path.
+- `ctrl1`: `{x, y}` offset for the first Bézier control point relative to the origin anchor.
+- `ctrl2`: `{x, y}` offset for the second Bézier control point relative to the target anchor.
 - `max_flow`: Reference flow rate for stroke-width visualization.
 
 ---

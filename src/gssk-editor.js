@@ -13,6 +13,8 @@ export class GsskEditor extends HTMLElement {
     this._selectedId = null;
     this._isDragging = false;
     this._draggedElement = null;
+    this._isDraggingHandle = false;
+    this._activeHandle = null;
     this._animationRequested = false;
 
     // Pan & Zoom state
@@ -386,7 +388,10 @@ export class GsskEditor extends HTMLElement {
       g.setAttribute('class', `edge-group ${this._selectedId === edge.id ? 'selected' : ''}`);
 
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      const d = this.calculatePathData(edge);
+      const geo = this.getEdgeGeometry(edge);
+      if (!geo) return;
+
+      const d = `M ${geo.x1},${geo.y1} C ${geo.cx1},${geo.cy1} ${geo.cx2},${geo.cy2} ${geo.x2},${geo.y2}`;
       path.setAttribute('d', d);
       path.setAttribute('fill', 'none');
       path.setAttribute('stroke', 'var(--edge-color)');
@@ -397,6 +402,39 @@ export class GsskEditor extends HTMLElement {
         path.setAttribute('stroke-dasharray', '5,5');
       }
       g.appendChild(path);
+
+      // Render control handles if selected
+      if (this._selectedId === edge.id && this._selectedType === 'edge' && !this._readOnly) {
+          const createHandle = (x, y, handleId) => {
+              const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+              circle.setAttribute('cx', x);
+              circle.setAttribute('cy', y);
+              circle.setAttribute('r', '5');
+              circle.setAttribute('class', 'control-handle');
+              circle.setAttribute('data-handle', handleId);
+              circle.setAttribute('data-edge-id', edge.id);
+              return circle;
+          };
+
+          const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line1.setAttribute('x1', geo.x1);
+          line1.setAttribute('y1', geo.y1);
+          line1.setAttribute('x2', geo.cx1);
+          line1.setAttribute('y2', geo.cy1);
+          line1.setAttribute('class', 'handle-line');
+          g.appendChild(line1);
+
+          const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line2.setAttribute('x1', geo.x2);
+          line2.setAttribute('y1', geo.y2);
+          line2.setAttribute('x2', geo.cx2);
+          line2.setAttribute('y2', geo.cy2);
+          line2.setAttribute('class', 'handle-line');
+          g.appendChild(line2);
+
+          g.appendChild(createHandle(geo.cx1, geo.cy1, 'ctrl1'));
+          g.appendChild(createHandle(geo.cx2, geo.cy2, 'ctrl2'));
+      }
 
       const controlNodeId = edge.params?.control_node || edge.control_node;
       if (edge.logic === 'interaction' || controlNodeId) {
@@ -429,31 +467,59 @@ export class GsskEditor extends HTMLElement {
     });
   }
 
+  getEdgeGeometry(edge) {
+      const originNode = this._value.nodes.find(n => n.id === edge.origin);
+      const targetNode = this._value.nodes.find(n => n.id === edge.target);
+      if (!originNode || !targetNode) return null;
+
+      const dx = targetNode.visual.x - originNode.visual.x;
+      const dy = targetNode.visual.y - originNode.visual.y;
+      const angle = Math.atan2(dy, dx);
+      const offset = 40;
+
+      const x1 = originNode.visual.x + Math.cos(angle) * offset;
+      const y1 = originNode.visual.y + Math.sin(angle) * offset;
+      const x2 = targetNode.visual.x - Math.cos(angle) * (offset + 5);
+      const y2 = targetNode.visual.y - Math.sin(angle) * (offset + 5);
+
+      const dist = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+
+      let cx1, cy1, cx2, cy2;
+
+      if (edge.visual && edge.visual.ctrl1) {
+          cx1 = x1 + edge.visual.ctrl1.x;
+          cy1 = y1 + edge.visual.ctrl1.y;
+      } else {
+          cx1 = x1 + Math.cos(angle - 0.2) * dist / 3;
+          cy1 = y1 + Math.sin(angle - 0.2) * dist / 3;
+      }
+
+      if (edge.visual && edge.visual.ctrl2) {
+          cx2 = x2 + edge.visual.ctrl2.x;
+          cy2 = y2 + edge.visual.ctrl2.y;
+      } else {
+          cx2 = x2 - Math.cos(angle + 0.2) * dist / 3;
+          cy2 = y2 - Math.sin(angle + 0.2) * dist / 3;
+      }
+
+      return { x1, y1, cx1, cy1, cx2, cy2, x2, y2 };
+  }
+
   calculatePathData(edge) {
-    const originNode = this._value.nodes.find(n => n.id === edge.origin);
-    const targetNode = this._value.nodes.find(n => n.id === edge.target);
-    if (originNode && targetNode) {
-        // Adjust points to node boundaries
-        const dx = targetNode.visual.x - originNode.visual.x;
-        const dy = targetNode.visual.y - originNode.visual.y;
-        const angle = Math.atan2(dy, dx);
-        const offset = 40;
-
-        const x1 = originNode.visual.x + Math.cos(angle) * offset;
-        const y1 = originNode.visual.y + Math.sin(angle) * offset;
-        const x2 = targetNode.visual.x - Math.cos(angle) * (offset + 5);
-        const y2 = targetNode.visual.y - Math.sin(angle) * (offset + 5);
-
-        return `M ${x1},${y1} L ${x2},${y2}`;
+    const geo = this.getEdgeGeometry(edge);
+    if (geo) {
+        return `M ${geo.x1},${geo.y1} C ${geo.cx1},${geo.cy1} ${geo.cx2},${geo.cy2} ${geo.x2},${geo.y2}`;
     }
     return '';
   }
 
   getPathMidpoint(edge) {
-      const originNode = this._value.nodes.find(n => n.id === edge.origin);
-      const targetNode = this._value.nodes.find(n => n.id === edge.target);
-      if (originNode && targetNode) {
-          return { x: (originNode.visual.x + targetNode.visual.x) / 2, y: (originNode.visual.y + targetNode.visual.y) / 2 };
+      const geo = this.getEdgeGeometry(edge);
+      if (geo) {
+          // Cubic Bezier midpoint formula (t=0.5)
+          const x = 0.125 * geo.x1 + 0.375 * geo.cx1 + 0.375 * geo.cx2 + 0.125 * geo.x2;
+          const y = 0.125 * geo.y1 + 0.375 * geo.cy1 + 0.375 * geo.cy2 + 0.125 * geo.y2;
+          return { x, y };
       }
       return { x: 0, y: 0 };
   }
@@ -558,6 +624,15 @@ export class GsskEditor extends HTMLElement {
         return;
     }
 
+    const controlHandle = e.target.closest('.control-handle');
+    if (controlHandle) {
+        this._isDraggingHandle = true;
+        this._activeHandle = controlHandle.dataset.handle;
+        this._selectedId = controlHandle.dataset.edgeId;
+        this._selectedType = 'edge';
+        return;
+    }
+
     const nodeTarget = e.target.closest('.node-group');
     const edgeTarget = e.target.closest('.edge-group');
     const boundaryTarget = e.target.closest('.boundary-group');
@@ -613,6 +688,30 @@ export class GsskEditor extends HTMLElement {
             b.h = Math.max(50, Math.round((svgP.y - b.y) / this._gridSize) * this._gridSize);
             this.update();
             this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
+        }
+        return;
+    }
+
+    if (this._isDraggingHandle) {
+        const edge = this._value.edges.find(e => e.id === this._selectedId);
+        if (edge) {
+            const geo = this.getEdgeGeometry(edge);
+            if (geo) {
+                if (!edge.visual) edge.visual = {};
+                if (this._activeHandle === 'ctrl1') {
+                    edge.visual.ctrl1 = {
+                        x: svgP.x - geo.x1,
+                        y: svgP.y - geo.y1
+                    };
+                } else {
+                    edge.visual.ctrl2 = {
+                        x: svgP.x - geo.x2,
+                        y: svgP.y - geo.y2
+                    };
+                }
+                this.update();
+                this.dispatchEvent(new CustomEvent('change', { detail: this.getJson() }));
+            }
         }
         return;
     }
@@ -674,6 +773,7 @@ export class GsskEditor extends HTMLElement {
     this._isDragging = false;
     this._isResizing = false;
     this._isPanning = false;
+    this._isDraggingHandle = false;
   }
 
   onWheel(e) {
