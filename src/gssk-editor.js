@@ -1227,6 +1227,42 @@ export class GsskEditor extends HTMLElement {
         });
     }
   }
+
+  async getDiagramImage() {
+    const svg = this.shadowRoot.getElementById('svg-canvas').cloneNode(true);
+    const style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+    style.textContent = styles;
+    svg.insertBefore(style, svg.firstChild);
+
+    svg.setAttribute('width', '1000');
+    svg.setAttribute('height', '1000');
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    canvas.width = 1000;
+    canvas.height = 1000;
+    const ctx = canvas.getContext('2d');
+
+    const img = new Image();
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+
+    return new Promise((resolve, reject) => {
+        img.onload = () => {
+            const theme = this.getAttribute('theme') || 'light';
+            ctx.fillStyle = theme === 'dark' ? '#020617' : '#f1f5f9';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+            URL.revokeObjectURL(url);
+            resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = (e) => {
+            URL.revokeObjectURL(url);
+            reject(e);
+        };
+        img.src = url;
+    });
+  }
 }
 
 customElements.define('gssk-editor', GsskEditor);
