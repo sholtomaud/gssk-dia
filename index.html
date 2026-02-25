@@ -1289,11 +1289,12 @@
         const ArticleSchema = z.object({
           title: z.string().describe("Professional academic title of the research paper."),
           abstract: z.string().describe("A concise summary of the research, objective, and findings."),
+          keywords: z.array(z.string()).describe("List of 5 key terms."),
           introduction: z.string().describe("Background information and importance of the model."),
           methodology: z.string().describe("Detailed description of the GSSK model structure and logic used."),
-          results_analysis: z.string().describe("Scientific analysis of the simulation results provided in context."),
-          conclusion: z.string().describe("Summary of findings and potential future work."),
-          keywords: z.array(z.string()).describe("List of 5 key terms.")
+          results: z.string().describe("Scientific analysis of the simulation results provided in context."),
+          discussion: z.string().describe("Interpretation of the results and implications."),
+          conclusion: z.string().describe("Summary of findings and potential future work.")
         });
 
         async function callGeminiForArticle() {
@@ -1355,12 +1356,15 @@
 
             let response;
             try {
+                const schema = zodToJsonSchema(ArticleSchema);
+                delete schema.$schema;
+
                 response = await ai.models.generateContent({
                     model: modelName,
                     contents: [{ role: 'user', parts }],
                     config: {
                         responseMimeType: "application/json",
-                        responseJsonSchema: zodToJsonSchema(ArticleSchema),
+                        responseJsonSchema: schema,
                     },
                 });
             } catch (apiError) {
@@ -1494,27 +1498,40 @@
             doc.text(methLines, 20, y);
             y += methLines.length * 5 + 10;
 
+            if (y > 250) { doc.addPage(); y = 20; }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("3. Simulation Results", 20, y);
+            y += 7;
+
             if (chartImg) {
-                if (y > 180) { doc.addPage(); y = 20; }
-                doc.setFontSize(14);
-                doc.setFont("helvetica", "bold");
-                doc.text("3. Simulation Results", 20, y);
-                y += 5;
+                if (y > 200) { doc.addPage(); y = 20; }
                 doc.addImage(chartImg, 'PNG', 20, y, 170, 80);
                 y += 90;
             }
 
-            if (y > 250) { doc.addPage(); y = 20; }
+            if (y > 270) { doc.addPage(); y = 20; }
             doc.setFontSize(11);
             doc.setFont("helvetica", "normal");
-            const resultLines = doc.splitTextToSize(data.results_analysis, 170);
+            const resultLines = doc.splitTextToSize(data.results, 170);
             doc.text(resultLines, 20, y);
             y += resultLines.length * 5 + 10;
 
             if (y > 250) { doc.addPage(); y = 20; }
             doc.setFontSize(14);
             doc.setFont("helvetica", "bold");
-            doc.text("4. Conclusion", 20, y);
+            doc.text("4. Discussion", 20, y);
+            y += 7;
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "normal");
+            const discLines = doc.splitTextToSize(data.discussion, 170);
+            doc.text(discLines, 20, y);
+            y += discLines.length * 5 + 10;
+
+            if (y > 250) { doc.addPage(); y = 20; }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("5. Conclusion", 20, y);
             y += 7;
             doc.setFontSize(11);
             doc.setFont("helvetica", "normal");
