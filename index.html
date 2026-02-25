@@ -1353,17 +1353,40 @@
                 });
             }
 
-            const response = await ai.models.generateContent({
-                model: modelName,
-                contents: [{ role: 'user', parts }],
-                config: {
-                    responseMimeType: "application/json",
-                    responseJsonSchema: zodToJsonSchema(ArticleSchema),
-                },
-            });
+            let response;
+            try {
+                response = await ai.models.generateContent({
+                    model: modelName,
+                    contents: [{ role: 'user', parts }],
+                    config: {
+                        responseMimeType: "application/json",
+                        responseJsonSchema: zodToJsonSchema(ArticleSchema),
+                    },
+                });
+            } catch (apiError) {
+                console.error("--- LLM REQUEST ERROR ---");
+                console.log("PROMPT:", prompt);
+                console.log("HAS IMAGE:", !!chartImgDataUrl);
+                throw apiError;
+            }
 
-            const text = response.text;
-            return ArticleSchema.parse(JSON.parse(text));
+            const text = response.text || (response.response && typeof response.response.text === 'function' ? response.response.text() : response.text);
+
+            try {
+                const parsedJson = JSON.parse(text);
+                return ArticleSchema.parse(parsedJson);
+            } catch (error) {
+                console.error("--- LLM RESPONSE ERROR ---");
+                console.log("PROMPT:", prompt);
+                console.log("HAS IMAGE:", !!chartImgDataUrl);
+                console.log("RAW RESPONSE:", text);
+                if (error instanceof z.ZodError) {
+                    console.log("ZOD ERRORS:", JSON.stringify(error.issues, null, 2));
+                } else if (error instanceof SyntaxError) {
+                    console.error("JSON Syntax Error:", error.message);
+                }
+                throw error;
+            }
         }
 
         // --- IndexedDB Setup ---
@@ -1602,7 +1625,11 @@
                 log('Article generation complete!', 'success');
                 updateLibraryList();
             } catch (e) {
-                log('Article generation failed: ' + e.message, 'error');
+                let errorMsg = e.message;
+                if (e instanceof z.ZodError) {
+                    errorMsg = 'Validation Error: ' + e.issues.map(err => `${err.path.join('.')}: ${err.message}`).join('; ');
+                }
+                log('Article generation failed: ' + errorMsg, 'error');
                 console.error(e);
             } finally {
                 generateArticleBtn.disabled = false;
