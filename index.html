@@ -666,6 +666,7 @@
         let chartData = [];
         let simTime = 0;
         let storageNodeIds = new Set();
+        let loggedMissingNodes = new Set();
 
         async function initGssk() {
             try {
@@ -731,6 +732,7 @@
                 chartData = [];
                 simTime = model.config.t_start;
                 storageNodeIds = new Set(model.nodes.filter(n => n.type === 'storage').map(n => n.id));
+                loggedMissingNodes = new Set();
 
                 const mode = simModeSelect.value;
                 if (mode === 'batch') {
@@ -785,13 +787,23 @@
             const state = gsskModule.HEAPF64.subarray(statePtr / 8, statePtr / 8 + size);
 
             const entry = { time };
+            const recordedIds = new Set();
             for (let i = 0; i < size; i++) {
                 const idPtr = gsskModule._GSSK_GetNodeID(kernelPtr, i);
                 const id = gsskModule.UTF8ToString(idPtr);
                 if (storageNodeIds.has(id)) {
                     entry[id] = state[i];
+                    recordedIds.add(id);
                 }
             }
+
+            storageNodeIds.forEach(id => {
+                if (!recordedIds.has(id) && !loggedMissingNodes.has(id)) {
+                    log(`CRITICAL ERROR: Storage node '${id}' is defined in the editor but missing from simulation kernel state. This node will be excluded from the chart.`, 'error');
+                    loggedMissingNodes.add(id);
+                }
+            });
+
             chartData.push(entry);
         }
 
@@ -884,7 +896,10 @@
             const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
             storageNodes.forEach((n, i) => {
                 const color = colors[i % colors.length];
-                let points = chartData.map(d => `${scaleX(d.time)},${scaleY(d[n.id])}`).join(' ');
+                let points = chartData
+                    .filter(d => d[n.id] !== undefined)
+                    .map(d => `${scaleX(d.time)},${scaleY(d[n.id])}`)
+                    .join(' ');
                 html += `<polyline points="${points}" fill="none" stroke="${color}" stroke-width="2" />`;
                 html += `<text x="${padding + 5}" y="${padding + 12 * (i + 1)}" fill="${color}" font-size="10" font-weight="600">${n.visual.label || n.id}</text>`;
             });
