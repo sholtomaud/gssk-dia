@@ -502,7 +502,7 @@
     <script type="module" src="/src/gssk-editor.js"></script>
     <script type="module">
         import createGSSK from 'gssk';
-        import { GoogleGenerativeAI } from "@google/generative-ai";
+        import { GoogleGenAI } from "@google/genai";
         import { z } from "zod";
         import { zodToJsonSchema } from "zod-to-json-schema";
         import { jsPDF } from "jspdf";
@@ -1303,14 +1303,28 @@
             }
 
             const modelName = localStorage.getItem('gssk_gemini_model') || 'gemini-3-flash-preview';
-            const genAI = new GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel({ model: modelName });
+            const ai = new GoogleGenAI({ apiKey });
 
             const gsskModel = editor.getJson();
-            const lastData = chartData.length > 0 ? chartData[chartData.length - 1] : null;
-            const simulationSummary = lastData ?
-                `Simulation ran for ${chartData.length} steps. Final state at t=${lastData.time.toFixed(2)}: ${JSON.stringify(lastData)}` :
-                "No simulation data available.";
+
+            // Calculate simulation statistics for interpretation
+            const stats = {};
+            if (chartData.length > 0) {
+                const storageNodes = gsskModel.nodes.filter(n => n.type === 'storage');
+                storageNodes.forEach(node => {
+                    const values = chartData.map(d => d[node.id]).filter(v => v !== undefined);
+                    if (values.length > 0) {
+                        stats[node.id] = {
+                            min: Math.min(...values).toFixed(4),
+                            max: Math.max(...values).toFixed(4),
+                            mean: (values.reduce((a, b) => a + b, 0) / values.length).toFixed(4),
+                            final: values[values.length - 1].toFixed(4)
+                        };
+                    }
+                });
+            }
+
+            const chartImgDataUrl = chartData.length > 0 ? await getChartImage() : null;
 
             const prompt = `
                 You are a senior scientist. Generate a structured scientific article based on the following GSSK system model and simulation data.
@@ -1318,25 +1332,37 @@
                 MODEL JSON:
                 ${JSON.stringify(gsskModel, null, 2)}
 
-                SIMULATION RESULTS:
-                ${simulationSummary}
+                SIMULATION STATISTICS:
+                ${JSON.stringify(stats, null, 2)}
 
                 Requirements:
                 - Use professional academic language.
-                - Describe the interaction between nodes and edges.
-                - Analyze the stability or trends in the results.
+                - Describe the interaction between nodes and edges based on the MODEL JSON.
+                - Analyze the stability or trends in the results using the SIMULATION STATISTICS and the provided chart image.
                 - Keywords should be relevant to the domain (e.g., ecology, finance, hydrology).
             `;
 
-            const result = await model.generateContent({
-                contents: [{ role: "user", parts: [{ text: prompt }] }],
-                generationConfig: {
+            const parts = [{ text: prompt }];
+            if (chartImgDataUrl) {
+                const base64Data = chartImgDataUrl.split(',')[1];
+                parts.push({
+                    inlineData: {
+                        mimeType: "image/png",
+                        data: base64Data
+                    }
+                });
+            }
+
+            const response = await ai.models.generateContent({
+                model: modelName,
+                contents: [{ role: 'user', parts }],
+                config: {
                     responseMimeType: "application/json",
                     responseJsonSchema: zodToJsonSchema(ArticleSchema),
                 },
             });
 
-            const text = result.response.text();
+            const text = response.text;
             return ArticleSchema.parse(JSON.parse(text));
         }
 
