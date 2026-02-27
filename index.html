@@ -373,6 +373,15 @@
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             </button>
             <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 8px;"></div>
+            <button id="connect-data" title="Connect to Data Source">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.59 16.11a6 6 0 0 1 6.82 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+                Connect
+            </button>
+            <button id="disconnect-data" style="display:none; color: #10b981;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.59 16.11a6 6 0 0 1 6.82 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+                Connected
+            </button>
+            <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 8px;"></div>
             <button id="run-sim" class="primary">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                 Run
@@ -404,6 +413,10 @@
                     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                 </svg>
             </button>
+            <button id="publish-model" title="Publish Model to Server">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19a3.5 3.5 0 1 1-5.8-3.6 5 5 0 1 1 5.8 3.6Z"/><path d="M12 13v6"/><path d="M9 16l3-3 3 3"/></svg>
+            </button>
+            <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 8px;"></div>
             <button id="open-settings">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 Settings
@@ -475,6 +488,26 @@
                 <label>Import Historical Data (CSV/JSON)</label>
                 <input type="file" id="import-historical" accept=".csv,.json">
             </div>
+            <div style="border-top: 1px solid var(--border-color); margin: 20px 0; padding-top: 20px;">
+                <label style="font-weight: 600; font-size: 0.75rem; text-transform: uppercase;">Data Source Configuration</label>
+            </div>
+            <div class="prop-group">
+                <label>API URL (REST/WS)</label>
+                <input type="text" id="ds-api-url" placeholder="https://api... or ws://...">
+            </div>
+            <div class="prop-group">
+                <label>Source Name</label>
+                <input type="text" id="ds-name" placeholder="Hydstra, etc.">
+            </div>
+            <div class="prop-group">
+                <label>API Key Variable Name</label>
+                <input type="text" id="ds-api-key-name" placeholder="X-API-KEY">
+            </div>
+            <div class="prop-group">
+                <label>Provider Name</label>
+                <input type="text" id="ds-provider" placeholder="Bureau of Meteorology">
+            </div>
+            <button id="test-connection" style="width: 100%; justify-content: center; margin-top: 10px;">Test Connection</button>
         </div>
     </div>
 
@@ -555,6 +588,9 @@
         const runBtn = document.getElementById('run-sim');
         const stopBtn = document.getElementById('stop-sim');
         const resetBtn = document.getElementById('reset-sim');
+        const connectBtn = document.getElementById('connect-data');
+        const disconnectBtn = document.getElementById('disconnect-data');
+        const publishBtn = document.getElementById('publish-model');
         const logConsole = document.getElementById('log-console');
         const rhsPanel = document.getElementById('rhs-panel');
         const toggleRhs = document.getElementById('toggle-rhs');
@@ -573,6 +609,12 @@
         const simStartTimeInput = document.getElementById('sim-start-time');
         const simEndTimeInput = document.getElementById('sim-end-time');
         const simDtInput = document.getElementById('sim-dt');
+
+        const dsApiUrlInput = document.getElementById('ds-api-url');
+        const dsNameInput = document.getElementById('ds-name');
+        const dsApiKeyNameInput = document.getElementById('ds-api-key-name');
+        const dsProviderInput = document.getElementById('ds-provider');
+        const testConnectionBtn = document.getElementById('test-connection');
 
         const generateArticleBtn = document.getElementById('generate-article');
         const openLibraryBtn = document.getElementById('open-library');
@@ -802,6 +844,13 @@
             },
             'hydrology': {
                 config: { dt: 0.1, t_start: 0, t_end: 100, method: 'euler' },
+                metadata: {
+                    datasource: {
+                        apiUrl: 'https://api.weather.gov/stations/KNYC/observations',
+                        name: 'Hydstra (Mock)',
+                        providerName: 'Bureau of Meteorology'
+                    }
+                },
                 nodes: [
                     { id: 'rainfall', type: 'source', value: 0, dataType: 'Rainfall', visual: { x: 100, y: 150, label: 'Rainfall (mm/h)' } },
                     { id: 'reservoir', type: 'storage', value: 50.0, dataType: 'WaterLevel', visual: { x: 350, y: 150, label: 'River Level (m)', capacity: 100.0 } },
@@ -859,13 +908,57 @@
         modelTitleInput.addEventListener('focus', () => modelTitleInput.style.border = '1px solid var(--border-color)');
         modelTitleInput.addEventListener('blur', () => modelTitleInput.style.border = '1px solid transparent');
 
-        let hydstraInterval = null;
+        let connectionInterval = null;
+        let mockSocket = null;
         let observedData = {}; // { dataType: [{t, v}, ...] }
 
-        async function fetchHydstraMock() {
-            log('Fetching real-time data from Hydstra (mock)...', 'info');
-            // Simulate network latency
-            await new Promise(r => setTimeout(r, 800));
+        function updateDataSourceUI(metadata) {
+            const ds = metadata?.datasource || {};
+            dsApiUrlInput.value = ds.apiUrl || '';
+            dsNameInput.value = ds.name || '';
+            dsApiKeyNameInput.value = ds.apiKeyName || '';
+            dsProviderInput.value = ds.providerName || '';
+        }
+
+        function getDataSourceFromUI() {
+            return {
+                apiUrl: dsApiUrlInput.value,
+                name: dsNameInput.value,
+                apiKeyName: dsApiKeyNameInput.value,
+                providerName: dsProviderInput.value
+            };
+        }
+
+        [dsApiUrlInput, dsNameInput, dsApiKeyNameInput, dsProviderInput].forEach(el => {
+            el.addEventListener('change', () => {
+                const model = editor.getJson();
+                if (!model.metadata) model.metadata = {};
+                model.metadata.datasource = getDataSourceFromUI();
+                editor.loadModel(model);
+                autoSave();
+            });
+        });
+
+        async function testConnection() {
+            const ds = getDataSourceFromUI();
+            if (!ds.apiUrl) {
+                log('Connection Test Failed: No API URL specified.', 'error');
+                return;
+            }
+            log(`Testing connection to ${ds.apiUrl}...`, 'info');
+            await new Promise(r => setTimeout(r, 1000));
+            log(`Connection to ${ds.name || 'Data Source'} successful! (Mock verified)`, 'success');
+        }
+
+        testConnectionBtn.addEventListener('click', testConnection);
+
+        async function fetchData() {
+            const model = editor.getJson();
+            const ds = model.metadata?.datasource || {};
+            const sourceName = ds.name || 'Data Source';
+
+            // Simulate network delay
+            await new Promise(r => setTimeout(r, 500));
 
             const data = {
                 'Rainfall': (Math.random() * 5),
@@ -874,8 +967,13 @@
                 'Evaporation': (Math.random() * 2)
             };
 
+            processIncomingData(data, sourceName);
+        }
+
+        function processIncomingData(data, sourceName) {
             const model = editor.getJson();
             let changed = false;
+
             model.nodes.forEach(n => {
                 if (n.dataType && data[n.dataType] !== undefined) {
                     n.value = data[n.dataType];
@@ -883,7 +981,8 @@
                     changed = true;
 
                     if (!observedData[n.dataType]) observedData[n.dataType] = [];
-                    observedData[n.dataType].push({ t: simTime, v: data[n.dataType] });
+                    const timestamp = isSimulating ? simTime : (observedData[n.dataType].length * (parseFloat(simDtInput.value) || 0.1));
+                    observedData[n.dataType].push({ t: timestamp, v: data[n.dataType] });
                 }
             });
 
@@ -893,14 +992,12 @@
                     return acc;
                 }, {}));
 
-                let logMsg = 'Hydstra API Update: ' + Object.entries(data).map(([k, v]) => `${k}=${v.toFixed(2)}`).join(', ');
+                let logMsg = `${sourceName} Update: ` + Object.entries(data).map(([k, v]) => `${k}=${v.toFixed(2)}`).join(', ');
                 log(logMsg, 'success');
 
                 if (isSimulating && kernelPtr) {
-                    // Inject updated values into kernel for forcing
                     model.nodes.forEach(n => {
                         if (n.dataType && data[n.dataType] !== undefined) {
-                            // Find node index in kernel
                             const size = gsskModule._GSSK_GetStateSize(kernelPtr);
                             for (let i = 0; i < size; i++) {
                                 const idPtr = gsskModule._GSSK_GetNodeID(kernelPtr, i);
@@ -913,30 +1010,69 @@
                         }
                     });
                 }
+
+                if (!isSimulating) {
+                    updateChart();
+                }
             }
         }
+
+        function connectData() {
+            const model = editor.getJson();
+            const ds = model.metadata?.datasource || {};
+            if (!ds.apiUrl) {
+                log('Cannot connect: No API URL defined in model metadata.', 'error');
+                settingsPanel.classList.add('open');
+                return;
+            }
+
+            log(`Connecting to ${ds.apiUrl}...`, 'info');
+            connectBtn.style.display = 'none';
+            disconnectBtn.style.display = 'flex';
+
+            if (ds.apiUrl.startsWith('ws://') || ds.apiUrl.startsWith('wss://')) {
+                log('Establishing WebSocket connection (mock)...', 'info');
+                mockSocket = setInterval(() => {
+                    const data = {
+                        'Rainfall': (Math.random() * 5),
+                        'WaterLevel': (30 + Math.random() * 40)
+                    };
+                    processIncomingData(data, ds.name || 'WebSocket');
+                }, 3000);
+            } else {
+                log('Starting REST polling (5s interval)...', 'info');
+                fetchData();
+                connectionInterval = setInterval(fetchData, 5000);
+            }
+        }
+
+        function disconnectData() {
+            if (connectionInterval) clearInterval(connectionInterval);
+            if (mockSocket) clearInterval(mockSocket);
+            connectionInterval = null;
+            mockSocket = null;
+            connectBtn.style.display = 'flex';
+            disconnectBtn.style.display = 'none';
+            log('Disconnected from data source.');
+        }
+
+        connectBtn.addEventListener('click', connectData);
+        disconnectBtn.addEventListener('click', disconnectData);
+
+        publishBtn.addEventListener('click', () => {
+            const model = editor.getJson();
+            console.log('--- PUBLISH TO SERVER ---');
+            console.log(JSON.stringify(model, null, 2));
+            log('Model published to server successfully! (Mock)', 'success');
+        });
 
         exampleSelect.addEventListener('change', (e) => {
             const val = e.target.value;
             if (!val) return;
 
             stopSimulation();
-            if (hydstraInterval) {
-                clearInterval(hydstraInterval);
-                hydstraInterval = null;
-            }
-
-            if (val === 'hydrology') {
-                log('Hydrology mode: Real-time API updates enabled (5s polling mock).');
-                observedData = {};
-                hydstraInterval = setInterval(fetchHydstraMock, 5000);
-                fetchHydstraMock();
-            } else {
-                if (hydstraInterval) {
-                    clearInterval(hydstraInterval);
-                    hydstraInterval = null;
-                }
-            }
+            disconnectData();
+            observedData = {};
 
             if (val.startsWith('user:')) {
                 const id = val.split(':')[1];
@@ -993,6 +1129,7 @@
                 if (model.config.t_end !== undefined) simEndTimeInput.value = model.config.t_end;
                 if (model.config.dt !== undefined) simDtInput.value = model.config.dt;
             }
+            updateDataSourceUI(model.metadata);
         }
 
         // Initial setup
@@ -1086,11 +1223,8 @@
             hideSimError();
             // Reset live observed data if not continuing
             if (simTime === 0) {
-                // We only want to clear live data, not necessarily historical data
-                // but for now let's just clear it if it's the hydrology example to avoid mixing old mock runs
-                if (exampleSelect.value === 'hydrology') {
-                    observedData = {};
-                }
+                // Clear observed data for a fresh run
+                observedData = {};
             }
             if (editor.hasAttribute('invalid')) {
                 log('Cannot run simulation: Model is invalid.', 'error');
@@ -1278,7 +1412,7 @@
         // --- Charting Logic ---
         const chartSvg = document.getElementById('chart-svg');
         function updateChart() {
-            if (chartData.length === 0) {
+            if (chartData.length === 0 && Object.keys(observedData).length === 0) {
                 chartSvg.innerHTML = '';
                 return;
             }
@@ -1292,13 +1426,24 @@
             if (storageNodes.length === 0) return;
 
             let minX = 0;
-            let maxX = Math.max(1, chartData[chartData.length - 1].time);
+            let lastSimTime = chartData.length > 0 ? chartData[chartData.length - 1].time : 0;
+            let lastObsTime = 0;
+            Object.values(observedData).forEach(obs => {
+                if (obs.length > 0 && obs[obs.length - 1].t > lastObsTime) lastObsTime = obs[obs.length - 1].t;
+            });
+
+            let maxX = Math.max(1, lastSimTime, lastObsTime);
             let minY = 0;
             let maxY = 0;
 
             chartData.forEach(d => {
                 storageNodes.forEach(n => {
                     if (d[n.id] > maxY) maxY = d[n.id];
+                });
+            });
+            Object.values(observedData).forEach(obs => {
+                obs.forEach(d => {
+                    if (d.v > maxY) maxY = d.v;
                 });
             });
             if (maxY === 0) maxY = 100;
