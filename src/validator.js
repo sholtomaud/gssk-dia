@@ -40,6 +40,9 @@ const schema = {
           "currentValue": {
             "type": "number"
           },
+          "dataType": {
+            "type": "string"
+          },
           "visual": {
             "type": "object",
             "additionalProperties": true
