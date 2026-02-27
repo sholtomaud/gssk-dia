@@ -29,10 +29,17 @@ export class GsskEditor extends HTMLElement {
     this._onDrop = this.onDrop.bind(this);
     this._onDoubleClick = this.onDoubleClick.bind(this);
     this._onKeyDown = this.onKeyDown.bind(this);
+    this._domains = [{ name: 'None', types: [] }];
   }
 
   static get observedAttributes() {
     return ['symbols', 'readonly', 'grid', 'invalid', 'theme'];
+  }
+
+  get domains() { return this._domains; }
+  set domains(val) {
+      this._domains = val;
+      if (this._selectedType === 'node') this.showPropertyPanel();
   }
 
   connectedCallback() {
@@ -118,11 +125,16 @@ export class GsskEditor extends HTMLElement {
     return JSON.parse(JSON.stringify(this._value));
   }
 
-  updateState(stateMap) {
+  updateState(stateMap, fitnessMap = null) {
     if (!this._value || !this._value.nodes) return;
     this._value.nodes.forEach((node) => {
       if (stateMap[node.id] !== undefined) {
         node.currentValue = stateMap[node.id];
+      }
+      if (fitnessMap && fitnessMap[node.id]) {
+          node.fitness = fitnessMap[node.id];
+      } else if (fitnessMap) {
+          delete node.fitness;
       }
     });
     if (!this._animationRequested) {
@@ -137,6 +149,24 @@ export class GsskEditor extends HTMLElement {
 
   updateVisuals() {
     this._value.nodes.forEach(node => {
+        const group = this.shadowRoot.querySelector(`[data-id="${node.id}"]`);
+        if (group && node.fitness) {
+            let badge = group.querySelector('.fitness-badge');
+            if (!badge) {
+                badge = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                badge.setAttribute('class', 'fitness-badge');
+                group.appendChild(badge);
+            }
+            const color = node.fitness.r2 > 0.8 ? '#4ade80' : node.fitness.r2 > 0.5 ? '#f59e0b' : '#f87171';
+            badge.innerHTML = `
+                <circle cx="70" cy="10" r="8" fill="${color}" stroke="var(--bg-color)" stroke-width="2"/>
+                <text x="70" y="25" text-anchor="middle" font-size="10" font-weight="bold" fill="${color}">${node.fitness.r2.toFixed(2)}</text>
+            `;
+        } else if (group) {
+            const badge = group.querySelector('.fitness-badge');
+            if (badge) badge.remove();
+        }
+
         const fillElement = this.shadowRoot.querySelector(`#fill-${node.id}`);
         if (fillElement && node.visual && node.visual.capacity) {
             const val = node.currentValue !== undefined ? node.currentValue : node.value;
@@ -1058,6 +1088,17 @@ export class GsskEditor extends HTMLElement {
             <label>Current Value</label>
             <input type="number" id="prop-current-value" step="0.1" readonly>
           </div>
+          <div class="prop-group">
+            <label>Data Mapping (dataType)</label>
+            <select id="prop-data-type">
+                <option value="">None</option>
+                ${this._domains.map(d => `
+                    <optgroup label="${d.name}">
+                        ${d.types.map(t => `<option value="${t}">${t}</option>`).join('')}
+                    </optgroup>
+                `).join('')}
+            </select>
+          </div>
           <div id="storage-props"></div>
           <div class="prop-group">
             <label>Type</label>
@@ -1073,6 +1114,7 @@ export class GsskEditor extends HTMLElement {
         content.querySelector('#prop-label').value = node.visual.label || '';
         content.querySelector('#prop-value').value = node.value;
         content.querySelector('#prop-current-value').value = (node.currentValue !== undefined ? node.currentValue : node.value).toFixed(2);
+        content.querySelector('#prop-data-type').value = node.dataType || '';
         content.querySelector('#prop-type').value = node.type;
 
         if (node.type === 'storage') {
@@ -1119,6 +1161,7 @@ export class GsskEditor extends HTMLElement {
         updateProp('#prop-id', 'id');
         updateProp('#prop-label', 'label', true);
         updateProp('#prop-value', 'value');
+        updateProp('#prop-data-type', 'dataType');
         if (node.type === 'storage') updateProp('#prop-capacity', 'capacity', true);
         updateProp('#prop-type', 'type');
     } else if (this._selectedType === 'boundary') {

@@ -464,6 +464,17 @@
                 <label>Gemini Model</label>
                 <input type="text" id="gemini-model" value="gemini-3-flash-preview">
             </div>
+            <div style="border-top: 1px solid var(--border-color); margin: 20px 0; padding-top: 20px;">
+                <label style="font-weight: 600; font-size: 0.75rem; text-transform: uppercase;">Domain & Data</label>
+            </div>
+            <div class="prop-group">
+                <label>Import Domain (JSON)</label>
+                <input type="file" id="import-domain" accept=".json">
+            </div>
+            <div class="prop-group">
+                <label>Import Historical Data (CSV/JSON)</label>
+                <input type="file" id="import-historical" accept=".csv,.json">
+            </div>
         </div>
     </div>
 
@@ -479,6 +490,14 @@
 
     <aside id="rhs-panel">
         <div id="toggle-rhs">&rsaquo;</div>
+            <div class="panel-section" id="fitness-section" style="height: 150px; min-height: 100px;">
+                <div class="panel-header">
+                    Fitness Metrics
+                </div>
+                <div id="fitness-metrics" style="font-size: 0.8rem; overflow-y: auto;">
+                    <p style="color: var(--panel-header-text);">No data mappings active.</p>
+                </div>
+            </div>
             <div class="panel-section" id="log-section" style="height: 250px; min-height: 100px;">
                 <div class="panel-header" id="log-header" style="cursor: ns-resize;">
                     Log Console
@@ -546,6 +565,10 @@
         const openSettingsBtn = document.getElementById('open-settings');
         const closeSettingsBtn = document.getElementById('close-settings');
 
+        const importDomainInput = document.getElementById('import-domain');
+        const importHistoricalInput = document.getElementById('import-historical');
+        const fitnessMetricsDiv = document.getElementById('fitness-metrics');
+
         const simModeSelect = document.getElementById('sim-mode');
         const simStartTimeInput = document.getElementById('sim-start-time');
         const simEndTimeInput = document.getElementById('sim-end-time');
@@ -558,6 +581,62 @@
         const libraryContent = document.getElementById('library-content');
         const geminiApiKeyInput = document.getElementById('gemini-api-key');
         const geminiModelInput = document.getElementById('gemini-model');
+
+        // Domain & Fitness State
+        let currentDomains = [
+            {
+                name: 'Hydrology',
+                types: ['Rainfall', 'WaterLevel', 'Flow', 'Evaporation']
+            }
+        ];
+        editor.domains = currentDomains;
+
+        importDomainInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const text = await file.text();
+                const domain = JSON.parse(text);
+                currentDomains.push(domain);
+                editor.domains = currentDomains;
+                log(`Domain "${domain.name}" imported.`);
+            } catch (err) {
+                log('Failed to import domain: ' + err.message, 'error');
+            }
+        });
+
+        importHistoricalInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const text = await file.text();
+                if (file.name.endsWith('.json')) {
+                    const data = JSON.parse(text);
+                    // Expected format: { dataType: [{t, v}, ...] }
+                    Object.assign(observedData, data);
+                } else if (file.name.endsWith('.csv')) {
+                    const lines = text.split('\n');
+                    const header = lines[0].split(',');
+                    // CSV format: time,dataType1,dataType2...
+                    for (let i = 1; i < lines.length; i++) {
+                        const row = lines[i].split(',');
+                        if (row.length < 2) continue;
+                        const t = parseFloat(row[0]);
+                        for (let j = 1; j < header.length; j++) {
+                            const dataType = header[j].trim();
+                            const v = parseFloat(row[j]);
+                            if (!observedData[dataType]) observedData[dataType] = [];
+                            observedData[dataType].push({ t, v });
+                        }
+                    }
+                }
+                log(`Historical data from "${file.name}" loaded.`);
+                updateFitnessUI();
+                updateChart();
+            } catch (err) {
+                log('Failed to import historical data: ' + err.message, 'error');
+            }
+        });
 
         // Load AI Settings
         geminiApiKeyInput.value = localStorage.getItem('gssk_gemini_api_key') || '';
@@ -724,8 +803,8 @@
             'hydrology': {
                 config: { dt: 0.1, t_start: 0, t_end: 100, method: 'euler' },
                 nodes: [
-                    { id: 'rainfall', type: 'source', value: 0, visual: { x: 100, y: 150, label: 'Rainfall (mm/h)' } },
-                    { id: 'reservoir', type: 'storage', value: 50.0, visual: { x: 350, y: 150, label: 'River Level (m)', capacity: 100.0 } },
+                    { id: 'rainfall', type: 'source', value: 0, dataType: 'Rainfall', visual: { x: 100, y: 150, label: 'Rainfall (mm/h)' } },
+                    { id: 'reservoir', type: 'storage', value: 50.0, dataType: 'WaterLevel', visual: { x: 350, y: 150, label: 'River Level (m)', capacity: 100.0 } },
                     { id: 'downstream', type: 'sink', value: 0, visual: { x: 600, y: 150, label: 'Downstream Flow' } }
                 ],
                 edges: [
@@ -781,31 +860,59 @@
         modelTitleInput.addEventListener('blur', () => modelTitleInput.style.border = '1px solid transparent');
 
         let hydstraInterval = null;
-        async function fetchHydstraMock() {
-            if (exampleSelect.value !== 'hydrology') {
-                clearInterval(hydstraInterval);
-                hydstraInterval = null;
-                return;
-            }
+        let observedData = {}; // { dataType: [{t, v}, ...] }
 
+        async function fetchHydstraMock() {
             log('Fetching real-time data from Hydstra (mock)...', 'info');
             // Simulate network latency
             await new Promise(r => setTimeout(r, 800));
 
-            const rain = (Math.random() * 5).toFixed(2);
-            const level = (30 + Math.random() * 40).toFixed(2);
+            const data = {
+                'Rainfall': (Math.random() * 5),
+                'WaterLevel': (30 + Math.random() * 40),
+                'Flow': (10 + Math.random() * 20),
+                'Evaporation': (Math.random() * 2)
+            };
 
             const model = editor.getJson();
             let changed = false;
             model.nodes.forEach(n => {
-                if (n.id === 'rainfall') { n.value = parseFloat(rain); changed = true; }
-                if (n.id === 'reservoir') { n.value = parseFloat(level); changed = true; }
+                if (n.dataType && data[n.dataType] !== undefined) {
+                    n.value = data[n.dataType];
+                    n.currentValue = data[n.dataType];
+                    changed = true;
+
+                    if (!observedData[n.dataType]) observedData[n.dataType] = [];
+                    observedData[n.dataType].push({ t: simTime, v: data[n.dataType] });
+                }
             });
 
             if (changed) {
-                editor.loadModel(model);
-                log(`Hydstra API Update: Rainfall=${rain}mm, RiverLevel=${level}m`, 'success');
-                // Auto-run if not simulating? No, let user decide when to run.
+                editor.updateState(model.nodes.reduce((acc, n) => {
+                    acc[n.id] = n.currentValue;
+                    return acc;
+                }, {}));
+
+                let logMsg = 'Hydstra API Update: ' + Object.entries(data).map(([k, v]) => `${k}=${v.toFixed(2)}`).join(', ');
+                log(logMsg, 'success');
+
+                if (isSimulating && kernelPtr) {
+                    // Inject updated values into kernel for forcing
+                    model.nodes.forEach(n => {
+                        if (n.dataType && data[n.dataType] !== undefined) {
+                            // Find node index in kernel
+                            const size = gsskModule._GSSK_GetStateSize(kernelPtr);
+                            for (let i = 0; i < size; i++) {
+                                const idPtr = gsskModule._GSSK_GetNodeID(kernelPtr, i);
+                                const id = gsskModule.UTF8ToString(idPtr);
+                                if (id === n.id) {
+                                    const statePtr = gsskModule._GSSK_GetState(kernelPtr);
+                                    gsskModule.HEAPF64[(statePtr / 8) + i] = n.currentValue;
+                                }
+                            }
+                        }
+                    });
+                }
             }
         }
 
@@ -821,8 +928,14 @@
 
             if (val === 'hydrology') {
                 log('Hydrology mode: Real-time API updates enabled (5s polling mock).');
+                observedData = {};
                 hydstraInterval = setInterval(fetchHydstraMock, 5000);
                 fetchHydstraMock();
+            } else {
+                if (hydstraInterval) {
+                    clearInterval(hydstraInterval);
+                    hydstraInterval = null;
+                }
             }
 
             if (val.startsWith('user:')) {
@@ -971,6 +1084,14 @@
 
         function startSimulation() {
             hideSimError();
+            // Reset live observed data if not continuing
+            if (simTime === 0) {
+                // We only want to clear live data, not necessarily historical data
+                // but for now let's just clear it if it's the hydrology example to avoid mixing old mock runs
+                if (exampleSelect.value === 'hydrology') {
+                    observedData = {};
+                }
+            }
             if (editor.hasAttribute('invalid')) {
                 log('Cannot run simulation: Model is invalid.', 'error');
                 return;
@@ -1059,6 +1180,8 @@
 
         function step(dt, t_end) {
             if (!isSimulating || !kernelPtr) return;
+
+            updateFitnessUI();
 
             const status = gsskModule._GSSK_Step(kernelPtr, dt);
             if (status !== 0) {
@@ -1211,6 +1334,15 @@
                     .map(d => `${scaleX(d.time)},${scaleY(d[n.id])}`)
                     .join(' ');
                 html += `<polyline points="${points}" fill="none" stroke="${color}" stroke-width="2" />`;
+
+                // Add observed data to chart if available
+                if (n.dataType && observedData[n.dataType]) {
+                    const obsPoints = observedData[n.dataType]
+                        .map(d => `${scaleX(d.t)},${scaleY(d.v)}`)
+                        .join(' ');
+                    html += `<polyline points="${obsPoints}" fill="none" stroke="${color}" stroke-width="1" stroke-dasharray="2,2" opacity="0.6" />`;
+                }
+
                 html += `<text x="${padding + 5}" y="${padding + 12 * (i + 1)}" fill="${color}" font-size="10" font-weight="600">${n.visual.label || n.id}</text>`;
             });
 
@@ -1218,6 +1350,89 @@
         }
 
         window.addEventListener('resize', updateChart);
+
+        // --- Fitness Dashboard Logic ---
+        function calculateFitness(nodeId, dataType) {
+            const observed = observedData[dataType];
+            if (!observed || observed.length < 2) return null;
+
+            // Align simulated data with observed data by time
+            const pairs = [];
+            observed.forEach(obs => {
+                // Find nearest simulated point
+                const sim = chartData.reduce((prev, curr) => {
+                    return Math.abs(curr.time - obs.t) < Math.abs(prev.time - obs.t) ? curr : prev;
+                }, chartData[0]);
+
+                if (sim && sim[nodeId] !== undefined) {
+                    pairs.push({ actual: obs.v, sim: sim[nodeId] });
+                }
+            });
+
+            if (pairs.length < 2) return null;
+
+            const n = pairs.length;
+            const sumA = pairs.reduce((s, p) => s + p.actual, 0);
+            const sumS = pairs.reduce((s, p) => s + p.sim, 0);
+            const meanA = sumA / n;
+            const meanS = sumS / n;
+
+            const ssTot = pairs.reduce((s, p) => s + Math.pow(p.actual - meanA, 2), 0);
+            const ssRes = pairs.reduce((s, p) => s + Math.pow(p.actual - p.sim, 2), 0);
+            const r2 = ssTot === 0 ? 0 : 1 - (ssRes / ssTot);
+
+            const chi2 = pairs.reduce((s, p) => s + (p.actual === 0 ? 0 : Math.pow(p.actual - p.sim, 2) / p.actual), 0);
+
+            // Simple p-value approximation (1-tailed t-test)
+            // This is a placeholder for a more complex distribution function
+            const pVal = Math.max(0, Math.min(1, 1 - r2));
+
+            return { r2, chi2, pVal, n };
+        }
+
+        function updateFitnessUI() {
+            const model = editor.getJson();
+            const storageNodes = model.nodes.filter(n => n.type === 'storage' && n.dataType);
+
+            if (storageNodes.length === 0) {
+                fitnessMetricsDiv.innerHTML = '<p style="color: var(--panel-header-text);">No data mappings active.</p>';
+                return;
+            }
+
+            let html = '';
+            const fitnessResults = {};
+
+            storageNodes.forEach(node => {
+                const stats = calculateFitness(node.id, node.dataType);
+                if (stats) {
+                    const color = stats.r2 > 0.8 ? '#4ade80' : stats.r2 > 0.5 ? '#f59e0b' : '#f87171';
+                    html += `
+                        <div style="margin-bottom: 12px; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px;">
+                            <div style="font-weight: 600; color: ${color}">${node.visual.label || node.id}</div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 4px;">
+                                <span>R²: ${stats.r2.toFixed(4)}</span>
+                                <span>χ²: ${stats.chi2.toFixed(2)}</span>
+                                <span>p: ${stats.pVal.toFixed(4)}</span>
+                                <span>n: ${stats.n}</span>
+                            </div>
+                        </div>
+                    `;
+                    fitnessResults[node.id] = stats;
+                }
+            });
+
+            if (html === '') {
+                fitnessMetricsDiv.innerHTML = '<p style="color: var(--panel-header-text);">Collecting data...</p>';
+            } else {
+                fitnessMetricsDiv.innerHTML = html;
+            }
+
+            // Push fitness results to editor for badges
+            editor.updateState(model.nodes.reduce((acc, n) => {
+                acc[n.id] = n.currentValue;
+                return acc;
+            }, {}), fitnessResults);
+        }
 
         async function getChartImage() {
             const originalSvg = document.getElementById('chart-svg');
