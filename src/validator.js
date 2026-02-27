@@ -137,6 +137,18 @@ const schema = {
     },
     "metadata": {
       "type": "object",
+      "properties": {
+        "datasource": {
+          "type": "object",
+          "properties": {
+            "apiUrl": { "type": "string" },
+            "name": { "type": "string" },
+            "apiKeyName": { "type": "string" },
+            "providerName": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      },
       "additionalProperties": true
     },
     "boundaries": {
