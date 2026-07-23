@@ -10,12 +10,12 @@
     "test": "playwright test"
   },
   "dependencies": {
-    "@google/genai": "^1.42.0",
-    "ajv": "^8.12.0",
+    "@google/genai": "^2.13.0",
+    "ajv": "^8.20.0",
     "gssk": "github:sholtomaud/GSSK#dist",
-    "jspdf": "^4.2.0",
-    "zod": "^4.3.6",
-    "zod-to-json-schema": "^3.25.1"
+    "jspdf": "^4.2.1",
+    "zod": "^4.4.3",
+    "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0",
