@@ -89,7 +89,7 @@ preview: build ## Serve the production build on http://localhost:$(PREVIEW_PORT)
 # --------------------------------------------------
 # Tests  (Playwright — runs against the preview server)
 # --------------------------------------------------
-test: image npm-install ## Run Playwright tests (CI mode against preview server)
+test: build ## Run Playwright tests (CI mode against preview server)
 	$(RUN) sh -c 'CI=true npm test'
 
 # --------------------------------------------------

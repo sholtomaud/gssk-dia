@@ -1,4 +1,9 @@
-FROM node:25-alpine
+# Playwright's official image: Chromium and its system libraries are already
+# installed, which node:alpine cannot provide (Playwright publishes no Alpine
+# browser builds, so `make test` could never launch a browser there).
+# Keep this tag in step with the @playwright/test version in package-lock.json —
+# Playwright refuses to run against a browser build it did not ship with.
+FROM mcr.microsoft.com/playwright:v1.62.1-noble
 
 WORKDIR /app
 
