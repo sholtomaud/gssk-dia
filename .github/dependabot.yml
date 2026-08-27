@@ -4,12 +4,36 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 10
     groups:
+      # Version updates cover direct dependencies only — that is Dependabot's
+      # design, not a configuration gap.
       production-dependencies:
+        applies-to: version-updates
         patterns:
           - "*"
         dependency-type: "production"
       development-dependencies:
+        applies-to: version-updates
         patterns:
           - "*"
         dependency-type: "development"
+      # Security advisories are the ones that reach transitive packages, and
+      # ungrouped they arrive one PR per package — which is how eight open PRs
+      # for dompurify, ws, brace-expansion and friends accumulated. Grouping
+      # them collapses a whole advisory sweep into a single reviewable PR.
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  # The workflows pin actions by major tag; without this nothing ever patches
+  # them.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
