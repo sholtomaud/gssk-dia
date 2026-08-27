@@ -1,0 +1,44 @@
+# Turns a green Dependabot PR into a merge without anyone touching it.
+#
+# The gate is GitHub's own auto-merge queue: `gh pr merge --auto` does not merge
+# now, it merges when every *required* status check passes. That makes the
+# repository ruleset load-bearing — if `build-and-test` is not a required check,
+# auto-merge fires the moment it is enabled and nothing ever tests these
+# updates. See .github/RULESET.md.
+name: Dependabot auto-merge
+
+on: pull_request
+
+# Dependabot-triggered runs get a read-only token unless the workflow asks for
+# more, and the ask has to be here rather than at the job.
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # For a grouped PR, update-type is the *highest* bump in the group, so a
+      # single major anywhere in a batch sends the whole PR to human review.
+      - name: Enable auto-merge for patch, minor and transitive updates
+        if: |
+          steps.meta.outputs.update-type == 'version-update:semver-patch' ||
+          steps.meta.outputs.update-type == 'version-update:semver-minor' ||
+          steps.meta.outputs.dependency-type == 'indirect'
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Leave major upgrades for review
+        if: steps.meta.outputs.update-type == 'version-update:semver-major'
+        run: |
+          echo "::notice::${{ steps.meta.outputs.dependency-names }} is a major upgrade — left for manual review."
