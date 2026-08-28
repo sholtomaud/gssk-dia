@@ -31,7 +31,15 @@ const schema = {
               "storage",
               "source",
               "sink",
-              "constant"
+              "constant",
+              "producer",
+              "consumer",
+              "interaction",
+              "transaction",
+              "switch",
+              "receiver",
+              "amplifier",
+              "box"
             ]
           },
           "value": {
