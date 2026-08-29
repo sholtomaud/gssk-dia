@@ -63,7 +63,7 @@ npm-install: image ## Install / sync npm dependencies inside the container
 # --------------------------------------------------
 # Development server  (Vite on port $(DEV_PORT))
 # --------------------------------------------------
-dev: image ## Start the Vite dev server on http://localhost:$(DEV_PORT)
+dev: image npm-install ## Start the Vite dev server on http://localhost:$(DEV_PORT)
 	$(CONTAINER_BIN) run -it --init --rm \
 		-v "$(PWD):$(WORKDIR)" \
 		-w $(WORKDIR) \

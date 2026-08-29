@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -42,7 +43,8 @@
             --panel-header-text: #94a3b8;
         }
 
-        body, html {
+        body,
+        html {
             margin: 0;
             padding: 0;
             width: 100%;
@@ -189,7 +191,8 @@
             margin-bottom: 20px;
         }
 
-        .side-panel input, .side-panel select {
+        .side-panel input,
+        .side-panel select {
             width: 100%;
             margin-top: 4px;
         }
@@ -244,10 +247,26 @@
             padding-left: 8px;
         }
 
-        .log-time { color: #64748b; margin-right: 8px; font-size: 0.7rem; }
-        .log-error { color: #f87171; border-left-color: #f87171; }
-        .log-info { color: #60a5fa; border-left-color: #60a5fa; }
-        .log-success { color: #4ade80; border-left-color: #4ade80; }
+        .log-time {
+            color: #64748b;
+            margin-right: 8px;
+            font-size: 0.7rem;
+        }
+
+        .log-error {
+            color: #f87171;
+            border-left-color: #f87171;
+        }
+
+        .log-info {
+            color: #60a5fa;
+            border-left-color: #60a5fa;
+        }
+
+        .log-success {
+            color: #4ade80;
+            border-left-color: #4ade80;
+        }
 
         #toggle-rhs {
             position: absolute;
@@ -338,20 +357,26 @@
             border-radius: 50%;
         }
 
-        input:checked + .slider {
+        input:checked+.slider {
             background-color: var(--primary-color);
         }
 
-        input:checked + .slider:before {
+        input:checked+.slider:before {
             transform: translateX(18px);
         }
     </style>
 </head>
+
 <body>
     <header>
         <div class="logo">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-color)"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
-            <input type="text" id="model-title" value="Untitled Model" style="background: none; border: 1px solid transparent; color: inherit; font: inherit; font-weight: 800; padding: 4px; border-radius: 4px; width: 200px; outline: none;" title="Click to rename">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-color)">
+                <path d="m8 3 4 8 5-5 5 15H2L8 3z" />
+            </svg>
+            <input type="text" id="model-title" value="Untitled Model"
+                style="background: none; border: 1px solid transparent; color: inherit; font: inherit; font-weight: 800; padding: 4px; border-radius: 4px; width: 200px; outline: none;"
+                title="Click to rename">
         </div>
         <div class="controls">
             <select id="example-select">
@@ -367,34 +392,58 @@
                 <optgroup label="My Models" id="user-models-group"></optgroup>
             </select>
             <button id="new-model" title="New Model">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
             </button>
             <button id="delete-model" title="Delete Model" style="color: #ef4444; display: none;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </svg>
             </button>
             <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 8px;"></div>
             <button id="connect-data" title="Connect to Data Source">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.59 16.11a6 6 0 0 1 6.82 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+                    <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+                    <path d="M8.59 16.11a6 6 0 0 1 6.82 0" />
+                    <line x1="12" y1="20" x2="12.01" y2="20" />
+                </svg>
                 Connect
             </button>
             <button id="disconnect-data" style="display:none; color: #10b981;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.59 16.11a6 6 0 0 1 6.82 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+                    <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+                    <path d="M8.59 16.11a6 6 0 0 1 6.82 0" />
+                    <line x1="12" y1="20" x2="12.01" y2="20" />
+                </svg>
                 Connected
             </button>
             <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 8px;"></div>
             <button id="run-sim" class="primary">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="5 3 19 12 5 21 5 3" />
+                </svg>
                 Run
             </button>
             <button id="stop-sim" style="display:none">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="6" y="6" width="12" height="12" />
+                </svg>
                 Stop
             </button>
             <button id="reset-sim">Reset</button>
             <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 8px;"></div>
             <button id="toggle-symbols">Odum Symbols</button>
             <button id="export-json" title="Export to Console">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
             </button>
             <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 8px;"></div>
             <button id="generate-article" title="Generate Scientific Article" style="position: relative;">
@@ -414,21 +463,45 @@
                 </svg>
             </button>
             <button id="publish-model" title="Publish Model to Server">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19a3.5 3.5 0 1 1-5.8-3.6 5 5 0 1 1 5.8 3.6Z"/><path d="M12 13v6"/><path d="M9 16l3-3 3 3"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17.5 19a3.5 3.5 0 1 1-5.8-3.6 5 5 0 1 1 5.8 3.6Z" />
+                    <path d="M12 13v6" />
+                    <path d="M9 16l3-3 3 3" />
+                </svg>
             </button>
             <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 8px;"></div>
             <button id="open-settings">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3" />
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
                 Settings
             </button>
             <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 8px;"></div>
             <div class="theme-switch-wrapper" style="display: flex; align-items: center; gap: 8px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #94a3b8"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="color: #94a3b8">
+                    <circle cx="12" cy="12" r="5" />
+                    <line x1="12" y1="1" x2="12" y2="3" />
+                    <line x1="12" y1="21" x2="12" y2="23" />
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                    <line x1="1" y1="12" x2="3" y2="12" />
+                    <line x1="21" y1="12" x2="23" y2="12" />
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                </svg>
                 <label class="theme-switch">
                     <input type="checkbox" id="theme-toggle">
                     <span class="slider"></span>
                 </label>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #94a3b8"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="color: #94a3b8">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                </svg>
             </div>
         </div>
     </header>
@@ -440,89 +513,96 @@
             <gssk-editor id="editor" symbols="odum"></gssk-editor>
         </div>
 
-    <div id="settings-panel" class="side-panel">
-        <div class="panel-header">
-            Simulation Settings
-            <button id="close-settings" style="padding: 0; border: none; background: none; font-size: 1.5rem; color: var(--text-color); cursor: pointer;">&times;</button>
+        <div id="settings-panel" class="side-panel">
+            <div class="panel-header">
+                Simulation Settings
+                <button id="close-settings"
+                    style="padding: 0; border: none; background: none; font-size: 1.5rem; color: var(--text-color); cursor: pointer;">&times;</button>
+            </div>
+            <div class="panel-content">
+                <div class="prop-group">
+                    <label>Simulation Mode</label>
+                    <select id="sim-mode">
+                        <option value="streaming">Streaming (Real-time)</option>
+                        <option value="batch">Batch (All at once)</option>
+                    </select>
+                </div>
+                <div class="prop-group">
+                    <label>Start Time</label>
+                    <input type="number" id="sim-start-time" value="0" step="0.1">
+                </div>
+                <div class="prop-group">
+                    <label>End Time</label>
+                    <input type="number" id="sim-end-time" value="100" step="1">
+                </div>
+                <div class="prop-group">
+                    <label>Time Step (dt)</label>
+                    <input type="number" id="sim-dt" value="0.1" step="0.01">
+                </div>
+                <div style="border-top: 1px solid var(--border-color); margin: 20px 0; padding-top: 20px;">
+                    <label style="font-weight: 600; font-size: 0.75rem; text-transform: uppercase;">AI
+                        Integration</label>
+                </div>
+                <div class="prop-group">
+                    <label>Gemini API Key</label>
+                    <input type="password" id="gemini-api-key" placeholder="Enter API Key...">
+                    <p style="font-size: 0.7rem; color: var(--panel-header-text); margin-top: 4px;">Stored locally in
+                        your browser.</p>
+                </div>
+                <div class="prop-group">
+                    <label>Gemini Model</label>
+                    <input type="text" id="gemini-model" value="gemini-3-flash-preview">
+                </div>
+                <div style="border-top: 1px solid var(--border-color); margin: 20px 0; padding-top: 20px;">
+                    <label style="font-weight: 600; font-size: 0.75rem; text-transform: uppercase;">Domain &
+                        Data</label>
+                </div>
+                <div class="prop-group">
+                    <label>Import Domain (JSON)</label>
+                    <input type="file" id="import-domain" accept=".json">
+                </div>
+                <div class="prop-group">
+                    <label>Import Historical Data (CSV/JSON)</label>
+                    <input type="file" id="import-historical" accept=".csv,.json">
+                </div>
+                <div style="border-top: 1px solid var(--border-color); margin: 20px 0; padding-top: 20px;">
+                    <label style="font-weight: 600; font-size: 0.75rem; text-transform: uppercase;">Data Source
+                        Configuration</label>
+                </div>
+                <div class="prop-group">
+                    <label>API URL (REST/WS)</label>
+                    <input type="text" id="ds-api-url" placeholder="https://api... or ws://...">
+                </div>
+                <div class="prop-group">
+                    <label>Source Name</label>
+                    <input type="text" id="ds-name" placeholder="Hydstra, etc.">
+                </div>
+                <div class="prop-group">
+                    <label>API Key Variable Name</label>
+                    <input type="text" id="ds-api-key-name" placeholder="X-API-KEY">
+                </div>
+                <div class="prop-group">
+                    <label>Provider Name</label>
+                    <input type="text" id="ds-provider" placeholder="Bureau of Meteorology">
+                </div>
+                <button id="test-connection" style="width: 100%; justify-content: center; margin-top: 10px;">Test
+                    Connection</button>
+            </div>
         </div>
-        <div class="panel-content">
-            <div class="prop-group">
-                <label>Simulation Mode</label>
-                <select id="sim-mode">
-                    <option value="streaming">Streaming (Real-time)</option>
-                    <option value="batch">Batch (All at once)</option>
-                </select>
-            </div>
-            <div class="prop-group">
-                <label>Start Time</label>
-                <input type="number" id="sim-start-time" value="0" step="0.1">
-            </div>
-            <div class="prop-group">
-                <label>End Time</label>
-                <input type="number" id="sim-end-time" value="100" step="1">
-            </div>
-            <div class="prop-group">
-                <label>Time Step (dt)</label>
-                <input type="number" id="sim-dt" value="0.1" step="0.01">
-            </div>
-            <div style="border-top: 1px solid var(--border-color); margin: 20px 0; padding-top: 20px;">
-                <label style="font-weight: 600; font-size: 0.75rem; text-transform: uppercase;">AI Integration</label>
-            </div>
-            <div class="prop-group">
-                <label>Gemini API Key</label>
-                <input type="password" id="gemini-api-key" placeholder="Enter API Key...">
-                <p style="font-size: 0.7rem; color: var(--panel-header-text); margin-top: 4px;">Stored locally in your browser.</p>
-            </div>
-            <div class="prop-group">
-                <label>Gemini Model</label>
-                <input type="text" id="gemini-model" value="gemini-3-flash-preview">
-            </div>
-            <div style="border-top: 1px solid var(--border-color); margin: 20px 0; padding-top: 20px;">
-                <label style="font-weight: 600; font-size: 0.75rem; text-transform: uppercase;">Domain & Data</label>
-            </div>
-            <div class="prop-group">
-                <label>Import Domain (JSON)</label>
-                <input type="file" id="import-domain" accept=".json">
-            </div>
-            <div class="prop-group">
-                <label>Import Historical Data (CSV/JSON)</label>
-                <input type="file" id="import-historical" accept=".csv,.json">
-            </div>
-            <div style="border-top: 1px solid var(--border-color); margin: 20px 0; padding-top: 20px;">
-                <label style="font-weight: 600; font-size: 0.75rem; text-transform: uppercase;">Data Source Configuration</label>
-            </div>
-            <div class="prop-group">
-                <label>API URL (REST/WS)</label>
-                <input type="text" id="ds-api-url" placeholder="https://api... or ws://...">
-            </div>
-            <div class="prop-group">
-                <label>Source Name</label>
-                <input type="text" id="ds-name" placeholder="Hydstra, etc.">
-            </div>
-            <div class="prop-group">
-                <label>API Key Variable Name</label>
-                <input type="text" id="ds-api-key-name" placeholder="X-API-KEY">
-            </div>
-            <div class="prop-group">
-                <label>Provider Name</label>
-                <input type="text" id="ds-provider" placeholder="Bureau of Meteorology">
-            </div>
-            <button id="test-connection" style="width: 100%; justify-content: center; margin-top: 10px;">Test Connection</button>
-        </div>
-    </div>
 
-    <div id="library-modal" class="side-panel">
-        <div class="panel-header">
-            Article Library
-            <button id="close-library" style="padding: 0; border: none; background: none; font-size: 1.5rem; color: var(--text-color); cursor: pointer;">&times;</button>
+        <div id="library-modal" class="side-panel">
+            <div class="panel-header">
+                Article Library
+                <button id="close-library"
+                    style="padding: 0; border: none; background: none; font-size: 1.5rem; color: var(--text-color); cursor: pointer;">&times;</button>
+            </div>
+            <div class="panel-content" id="library-content">
+                <p style="color: var(--panel-header-text); font-size: 0.875rem;">No articles generated yet.</p>
+            </div>
         </div>
-        <div class="panel-content" id="library-content">
-            <p style="color: var(--panel-header-text); font-size: 0.875rem;">No articles generated yet.</p>
-        </div>
-    </div>
 
-    <aside id="rhs-panel">
-        <div id="toggle-rhs">&rsaquo;</div>
+        <aside id="rhs-panel">
+            <div id="toggle-rhs">&rsaquo;</div>
             <div class="panel-section" id="fitness-section" style="height: 150px; min-height: 100px;">
                 <div class="panel-header">
                     Fitness Metrics
@@ -537,7 +617,8 @@
                     <button id="maximize-rhs" style="padding: 4px 8px; font-size: 0.65rem;">Maximize</button>
                 </div>
                 <div id="log-console" style="flex-grow: 1;">
-                    <div class="log-entry"><span class="log-time">00:00:00</span> <span class="log-info">System ready.</span></div>
+                    <div class="log-entry"><span class="log-time">00:00:00</span> <span class="log-info">System
+                            ready.</span></div>
                 </div>
             </div>
             <div class="panel-section" style="flex-grow: 1;">
@@ -1148,6 +1229,10 @@
 
         async function initGssk() {
             try {
+                // locateFile is required so Emscripten resolves the .wasm
+                // through Vite's asset pipeline (gsskUrl is a ?url import).
+                // Without it, Emscripten derives the path from the JS URL and
+                // gets a 404 HTML response which fails the magic-word check.
                 gsskModule = await createGSSK({
                     locateFile: (path) => path.endsWith('.wasm') ? gsskUrl : path
                 });
@@ -1181,11 +1266,28 @@
         stopBtn.addEventListener('click', stopSimulation);
         resetBtn.addEventListener('click', resetSimulation);
 
+        // Map extended Odum visual types onto the 4 kernel-primitive types.
+        // The kernel only understands: storage, source, sink, constant.
+        const KERNEL_TYPE_MAP = {
+            storage:     'storage',
+            consumer:    'storage',  // autocatalytic store
+            receiver:    'storage',  // saturating receiver
+            box:         'storage',  // miscellaneous subsystem
+            source:      'source',
+            producer:    'source',   // energy collector/transformer
+            interaction: 'source',   // work-gate control node
+            transaction: 'source',   // exchange coupling
+            switch:      'source',   // conditional gate
+            amplifier:   'source',   // constant-gain unit
+            sink:        'sink',
+            constant:    'constant',
+        };
+
         function cleanModelForKernel(model) {
             return {
                 nodes: model.nodes.map(n => ({
                     id: n.id,
-                    type: n.type,
+                    type: KERNEL_TYPE_MAP[n.type] ?? n.type,
                     value: n.value
                 })),
                 edges: model.edges.map(e => {
@@ -1248,6 +1350,11 @@
 
                 if (kernelPtr) gsskModule._GSSK_Free(kernelPtr);
 
+                // GSSK_Status GSSK_Init(const char *json_data, GSSK_Instance **out_inst)
+                // Returns a status; the instance comes back through the out-param.
+                // Calling it with one argument passes 0 for out_inst and stores the
+                // *status* in kernelPtr, where a non-zero failure reads as a valid
+                // handle and the run proceeds against an uninitialised kernel.
                 const outInstPtr = gsskModule._malloc(4);
                 const status = gsskModule._GSSK_Init(ptr, outInstPtr);
 
@@ -1270,7 +1377,9 @@
 
                 chartData = [];
                 simTime = model.config.t_start;
-                storageNodeIds = new Set(model.nodes.filter(n => n.type === 'storage').map(n => n.id));
+                // Track all state-bearing node types for charting
+                const STATE_TYPES = new Set(['storage','consumer','receiver','box']);
+                storageNodeIds = new Set(model.nodes.filter(n => STATE_TYPES.has(n.type)).map(n => n.id));
                 loggedMissingNodes = new Set();
 
                 const mode = simModeSelect.value;
@@ -1294,15 +1403,7 @@
             const t_end = settings.t_end;
 
             while (simTime < t_end) {
-                const status = gsskModule._GSSK_Step(kernelPtr, dt);
-                if (status !== 0) {
-                    const errPtr = gsskModule._GSSK_GetErrorDescription(kernelPtr);
-                    const errMsg = gsskModule.UTF8ToString(errPtr);
-                    const msg = `Simulation failed at t=${simTime.toFixed(2)}: ${errMsg}`;
-                    log(msg, 'error');
-                    showSimError(msg);
-                    break;
-                }
+                gsskModule._GSSK_Step(kernelPtr, dt); // _GSSK_Step returns void
                 simTime += dt;
                 if (!recordState(simTime)) break;
             }
@@ -1317,16 +1418,7 @@
 
             updateFitnessUI();
 
-            const status = gsskModule._GSSK_Step(kernelPtr, dt);
-            if (status !== 0) {
-                const errPtr = gsskModule._GSSK_GetErrorDescription(kernelPtr);
-                const errMsg = gsskModule.UTF8ToString(errPtr);
-                const msg = `Simulation failed at t=${simTime.toFixed(2)}: ${errMsg}`;
-                log(msg, 'error');
-                showSimError(msg);
-                stopSimulation();
-                return;
-            }
+            gsskModule._GSSK_Step(kernelPtr, dt); // _GSSK_Step returns void
             simTime += dt;
 
             updateVisualsFromState();
@@ -1468,7 +1560,7 @@
             html += `
                 <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="var(--chart-axis)" />
                 <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" stroke="var(--chart-axis)" />
-                <text x="${width/2}" y="${height - 5}" text-anchor="middle" font-size="10" fill="var(--chart-tick)">Time (s)</text>
+                <text x="${width / 2}" y="${height - 5}" text-anchor="middle" font-size="10" fill="var(--chart-tick)">Time (s)</text>
             `;
 
             const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
@@ -1647,14 +1739,14 @@
 
         // --- AI & Article Generation ---
         const ArticleSchema = z.object({
-          title: z.string().describe("Professional academic title of the research paper."),
-          abstract: z.string().describe("A concise summary of the research, objective, and findings."),
-          keywords: z.array(z.string()).describe("List of 5 key terms."),
-          introduction: z.string().describe("Background information and importance of the model."),
-          methodology: z.string().describe("Detailed description of the GSSK model structure and logic used."),
-          results: z.string().describe("Scientific analysis of the simulation results provided in context."),
-          discussion: z.string().describe("Interpretation of the results and implications."),
-          conclusion: z.string().describe("Summary of findings and potential future work.")
+            title: z.string().describe("Professional academic title of the research paper."),
+            abstract: z.string().describe("A concise summary of the research, objective, and findings."),
+            keywords: z.array(z.string()).describe("List of 5 key terms."),
+            introduction: z.string().describe("Background information and importance of the model."),
+            methodology: z.string().describe("Detailed description of the GSSK model structure and logic used."),
+            results: z.string().describe("Scientific analysis of the simulation results provided in context."),
+            discussion: z.string().describe("Interpretation of the results and implications."),
+            conclusion: z.string().describe("Summary of findings and potential future work.")
         });
 
         async function callGeminiForArticle() {
@@ -2015,4 +2107,5 @@
         });
     </script>
 </body>
+
 </html>

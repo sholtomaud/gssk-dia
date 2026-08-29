@@ -196,14 +196,121 @@ export class GsskEditor extends HTMLElement {
       <style>${styles}</style>
       <div class="editor-container">
         <div id="palette" class="panel palette">
-          <div class="panel-header">
-            Nodes
+          <div class="panel-header">Nodes</div>
+
+          <!-- (a) Source — plain circle -->
+          <div class="palette-item" draggable="true" data-type="source" title="Source (a) — external forcing function">
+            <svg viewBox="0 0 100 100" width="44" height="44">
+              <circle cx="50" cy="50" r="32" fill="none" stroke="currentColor" stroke-width="4"/>
+            </svg>
+            <span>Source</span>
           </div>
-          <div class="palette-item" draggable="true" data-type="source" title="Source">Src</div>
-          <div class="palette-item" draggable="true" data-type="storage" title="Storage">Sto</div>
-          <div class="palette-item" draggable="true" data-type="sink" title="Sink">Snk</div>
-          <div class="palette-item" draggable="true" data-type="constant" title="Constant">Con</div>
-          <div class="palette-item" draggable="true" data-type="boundary" title="System Boundary">Bnd</div>
+
+          <!-- (c) Storage / Tank — triangular roof + semicircular bottom -->
+          <div class="palette-item" draggable="true" data-type="storage" title="Storage (c) — state variable tank">
+            <svg viewBox="0 0 100 100" width="44" height="44">
+              <path d="M 15,50 L 15,44.75 L 50,22 L 85,44.75 L 85,50 A 35,35 0 0 1 15,50 Z"
+                    fill="none" stroke="currentColor" stroke-width="4"/>
+            </svg>
+            <span>Storage</span>
+          </div>
+
+          <!-- (b) Heat Sink — downward arrow + three decreasing bars -->
+          <div class="palette-item" draggable="true" data-type="sink" title="Heat Sink (b) — degraded energy dispersion">
+            <svg viewBox="0 0 100 100" width="44" height="44">
+              <line x1="50" y1="18" x2="50" y2="50" stroke="currentColor" stroke-width="4"/>
+              <polygon points="50,58 43,46 57,46" fill="currentColor"/>
+              <line x1="32" y1="64" x2="68" y2="64" stroke="currentColor" stroke-width="3.5"/>
+              <line x1="38" y1="72" x2="62" y2="72" stroke="currentColor" stroke-width="3.5"/>
+              <line x1="44" y1="80" x2="56" y2="80" stroke="currentColor" stroke-width="3.5"/>
+            </svg>
+            <span>Heat Sink</span>
+          </div>
+
+          <!-- Constant — circle with horizontal bar (fixed forcing function) -->
+          <div class="palette-item" draggable="true" data-type="constant" title="Constant — fixed-value forcing function">
+            <svg viewBox="0 0 100 100" width="44" height="44">
+              <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" stroke-width="4"/>
+              <line x1="26" y1="50" x2="74" y2="50" stroke="currentColor" stroke-width="3"/>
+            </svg>
+            <span>Constant</span>
+          </div>
+
+          <!-- (d) Interaction / Work Gate — forward chevron with V-notch -->
+          <div class="palette-item" draggable="true" data-type="interaction" title="Interaction (d) — work gate, two flows interact">
+            <svg viewBox="0 0 100 100" width="44" height="44">
+              <path d="M 10,28 L 60,28 L 82,50 L 60,72 L 10,72 L 28,50 Z"
+                    fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
+            </svg>
+            <span>Interact.</span>
+          </div>
+
+          <!-- (e) Transaction — diamond -->
+          <div class="palette-item" draggable="true" data-type="transaction" title="Transaction (e) — exchange of goods/money">
+            <svg viewBox="0 0 100 100" width="44" height="44">
+              <polygon points="50,16 84,50 50,84 16,50"
+                       fill="none" stroke="currentColor" stroke-width="4"/>
+            </svg>
+            <span>Trans.</span>
+          </div>
+
+          <!-- (f) Producer — D-shape: flat left, semicircle right -->
+          <div class="palette-item" draggable="true" data-type="producer" title="Producer (f) — collects/transforms low-quality energy">
+            <svg viewBox="0 0 100 100" width="44" height="44">
+              <path d="M 18,25 L 65,25 A 25,25 0 0 1 65,75 L 18,75 Z"
+                    fill="none" stroke="currentColor" stroke-width="4"/>
+            </svg>
+            <span>Producer</span>
+          </div>
+
+          <!-- (g) Consumer — regular hexagon, flat top/bottom (rotate 30°) -->
+          <div class="palette-item" draggable="true" data-type="consumer" title="Consumer (g) — transforms energy, autocatalytic">
+            <svg viewBox="0 0 100 100" width="44" height="44">
+              <polygon points="84,50 67,79.5 33,79.5 16,50 33,20.5 67,20.5"
+                       fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
+            </svg>
+            <span>Consumer</span>
+          </div>
+
+          <!-- (h) Switch — four-pointed concave star -->
+          <div class="palette-item" draggable="true" data-type="switch" title="Switch (h) — conditional switching action">
+            <svg viewBox="0 0 100 100" width="44" height="44">
+              <path d="M 15,15 C 27.25,27.25 72.75,27.25 85,15
+                       C 72.75,27.25 72.75,72.75 85,85
+                       C 72.75,72.75 27.25,72.75 15,85
+                       C 27.25,72.75 27.25,27.25 15,15 Z"
+                    fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
+            </svg>
+            <span>Switch</span>
+          </div>
+
+          <!-- (i) Receiver — flat left, semicircle right (narrow D, self-limiting) -->
+          <div class="palette-item" draggable="true" data-type="receiver" title="Receiver (i) — self-limiting saturating receiver">
+            <svg viewBox="0 0 100 100" width="44" height="44">
+              <path d="M 38,18 L 50,18 A 32,32 0 0 1 50,82 L 38,82 Z"
+                    fill="none" stroke="currentColor" stroke-width="4"/>
+            </svg>
+            <span>Receiver</span>
+          </div>
+
+          <!-- (j) Amplifier — right-pointing isosceles triangle -->
+          <div class="palette-item" draggable="true" data-type="amplifier" title="Amplifier (j) — constant-gain unit">
+            <svg viewBox="0 0 100 100" width="44" height="44">
+              <polygon points="18,30 18,70 82,50"
+                       fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
+            </svg>
+            <span>Amplifier</span>
+          </div>
+
+          <!-- (k) Box — plain rectangle (miscellaneous subsystem) -->
+          <div class="palette-item" draggable="true" data-type="box" title="Box (k) — miscellaneous subsystem">
+            <svg viewBox="0 0 100 100" width="44" height="44">
+              <rect x="14" y="28" width="72" height="44" rx="2"
+                    fill="none" stroke="currentColor" stroke-width="4"/>
+            </svg>
+            <span>Box</span>
+          </div>
+
         </div>
         <div id="canvas-container">
           <svg id="svg-canvas" viewBox="${this._viewBox.x} ${this._viewBox.y} ${this._viewBox.w} ${this._viewBox.h}">
