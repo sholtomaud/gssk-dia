@@ -311,6 +311,18 @@ export class GsskEditor extends HTMLElement {
             <span>Box</span>
           </div>
 
+          <!-- System Boundary — a diagram region, not an Odum node type.
+               handleDrop() routes this into model.boundaries[] rather than
+               model.nodes[], so it never reaches the kernel. -->
+          <div class="palette-item" draggable="true" data-type="boundary" title="System Boundary — dashed enclosure region">
+            <svg viewBox="0 0 100 100" width="44" height="44">
+              <rect x="10" y="10" width="80" height="80" rx="12"
+                    fill="none" stroke="currentColor" stroke-width="3"
+                    stroke-dasharray="8,5" opacity="0.8"/>
+            </svg>
+            <span>Boundary</span>
+          </div>
+
         </div>
         <div id="canvas-container">
           <svg id="svg-canvas" viewBox="${this._viewBox.x} ${this._viewBox.y} ${this._viewBox.w} ${this._viewBox.h}">
