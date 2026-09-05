@@ -4,7 +4,7 @@ A browser diagram editor for **GSSK** models — energy-systems diagrams in the
 visual language of [Howard T. Odum](https://en.wikipedia.org/wiki/Howard_T._Odum),
 drawn on a canvas and then simulated.
 
-Live: **https://sholtomaud.github.io/gssk-dia/**
+Live: **https://energese-project.github.io/gssk-dia/**
 
 Draw a system as sources, storages, producers, consumers and the flows between
 them; the diagram *is* the model. Press run and a WebAssembly kernel integrates
